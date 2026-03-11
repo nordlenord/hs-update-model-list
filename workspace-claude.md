@@ -48,4 +48,8 @@ Each note can store data in up to three storage layers. All data lives under `.n
 - **Files**: arbitrary files stored by the note. List with Glob, read with Read.
 - **SQL Database**: a standard SQLite database. Query with `sqlite3` in the Bash tool (e.g., `sqlite3 .note-data/my-note.html/db.sqlite "SELECT * FROM tablename"`). To discover tables: `sqlite3 ... ".tables"`.
 
+### Auto-Persisted Form State
+
+Interactive elements — `<input>` (except password/hidden), `<textarea>`, `<select>`, and `[contenteditable]` — are automatically saved to the note's KV store (under the `__autosave` key) and restored on reload. No extra code is needed. To opt an element out, add the `data-no-persist` attribute.
+
 Not every note uses storage — these paths only exist for notes that have created data.
