@@ -27,12 +27,13 @@ workspace/
 
 When asked to create a note, create a folder (lowercase, kebab-case, e.g., `cooking-pasta/`) with an `index.html` inside. Use this structure for the HTML: an `<article class="note">` with `data-title` and `data-created` (today's date, YYYY-MM-DD) attributes, an `<h1>` matching the title, and semantic HTML for content (h2, h3, p, ul, ol, blockquote, code, pre, table, etc.). Optionally add a `<head>` with `<meta name="tags" content="tag1, tag2">` for tagging. Tags: letters, digits, hyphens, underscores only; must start with a letter or digit; use hyphens for multi-word tags. Write substantive, well-structured, readable content.
 
+- NO full HTML document wrappers — no doctype, html, or body tags
+- An optional `<head>` section is allowed for metadata (e.g., `<meta name="tags">`)
+
 ## Rules
 
 - Create items as folders containing `index.html` — at the root or inside organizational subfolders (plain folders that group notes, without their own `index.html`)
 - Folder names: lowercase, kebab-case (e.g., `cooking-pasta/`)
-- NO full HTML document wrappers — no doctype, html, or body tags
-- An optional `<head>` section is allowed for metadata (e.g., `<meta name="tags">`)
 - Do NOT name a note folder `storage` — this is a reserved name for per-item storage
 - Inter-note links use relative paths: `<a href="../other-note/index.html">link text</a>`
 
