@@ -1,52 +1,54 @@
 # Workspace
 
-This is an HTML workspace. Each item is a standalone `.html` file in the root of this folder — ranging from simple notes to interactive micro-applications. Beyond the HTML itself, each item can have per-note memory and up to three storage layers — some items may already have data in these stores. See sections below for details.
+This is an HTML workspace. Each item is a self-contained folder containing an `index.html` file — ranging from simple notes to interactive micro-applications. Beyond the HTML itself, each item can have per-note memory and up to three storage layers — some items may already have data in these stores. See sections below for details.
 
 ```
 workspace/
-├── my-item.html                    ← the item itself
-├── other-item.html
-├── .note-data/
-│   ├── my-item.html/
-│   │   ├── memory.md               ← per-item context for AI
-│   │   ├── kv.json                 ← key-value store (auto-saved form state in `__autosave` key)
-│   │   ├── db.sqlite               ← SQLite database
-│   │   └── files/                  ← arbitrary file storage
-│   │       └── ...
-│   └── other-item.html/
-│       └── ...
+├── my-item/
+│   ├── index.html                  ← the item itself
+│   ├── memory.md                   ← per-item context for AI
+│   └── storage/
+│       ├── kv.json                 ← key-value store (auto-saved form state in `__autosave` key)
+│       ├── db.sqlite               ← SQLite database
+│       └── files/                  ← arbitrary file storage
+│           └── ...
+├── other-item/
+│   ├── index.html
+│   └── ...
 ```
 
 ## When you receive a request
 
-1. If asked to create something, create a new .html file using the Write tool in this folder
-2. If asked to edit an existing item, read the file first then edit it
+1. If asked to create something, create a new folder with an `index.html` file inside it
+2. If asked to edit an existing item, read its `index.html` first then edit it. Note that dynamic content (e.g., user input, runtime state) may live in the item's KV store (`kv.json` under `__autosave`) rather than in the HTML — check both the HTML and the relevant storage files to understand the item's full state before making changes.
 3. If asked about existing items, read the relevant files first
 
 ## Notes
 
-When asked to create a note, use this structure: an `<article class="note">` with `data-title` and `data-created` (today's date, YYYY-MM-DD) attributes, an `<h1>` matching the title, and semantic HTML for content (h2, h3, p, ul, ol, blockquote, code, pre, table, etc.). Optionally add a `<head>` with `<meta name="tags" content="tag1, tag2">` for tagging. Tags: letters, digits, hyphens, underscores only; must start with a letter or digit; use hyphens for multi-word tags. Write substantive, well-structured, readable content.
+When asked to create a note, create a folder (lowercase, kebab-case, e.g., `cooking-pasta/`) with an `index.html` inside. Use this structure for the HTML: an `<article class="note">` with `data-title` and `data-created` (today's date, YYYY-MM-DD) attributes, an `<h1>` matching the title, and semantic HTML for content (h2, h3, p, ul, ol, blockquote, code, pre, table, etc.). Optionally add a `<head>` with `<meta name="tags" content="tag1, tag2">` for tagging. Tags: letters, digits, hyphens, underscores only; must start with a letter or digit; use hyphens for multi-word tags. Write substantive, well-structured, readable content.
 
 ## Rules
 
-- Create items as .html files in the ROOT of this folder (not in subfolders)
-- Filenames: lowercase, kebab-case (e.g., cooking-pasta.html)
+- Create items as folders containing `index.html` — at the root or inside organizational subfolders (plain folders that group notes, without their own `index.html`)
+- Folder names: lowercase, kebab-case (e.g., `cooking-pasta/`)
 - NO full HTML document wrappers — no doctype, html, or body tags
 - An optional `<head>` section is allowed for metadata (e.g., `<meta name="tags">`)
+- Do NOT name a note folder `storage` — this is a reserved name for per-item storage
+- Inter-note links use relative paths: `<a href="../other-note/index.html">link text</a>`
 
 ## Per-Item Storage
 
-Each item can store data in up to three storage layers. All data lives under `.note-data/{itemFilename}/` (e.g., `.note-data/cooking-pasta.html/`).
+Each item can store data in up to three storage layers. All data lives under `{item-folder}/storage/` (e.g., `cooking-pasta/storage/`).
 
 | Storage | Path | Format | How to access |
 |---------|------|--------|---------------|
-| KV Store | `kv.json` | Plain JSON object | Read the file directly |
-| Files | `files/{name}` | Any binary/text file | Read/list files in the directory |
-| SQL Database | `db.sqlite` | SQLite 3 | Use `sqlite3 .note-data/{item}/db.sqlite` |
+| KV Store | `storage/kv.json` | Plain JSON object | Read the file directly |
+| Files | `storage/files/{name}` | Any binary/text file | Read/list files in the directory |
+| SQL Database | `storage/db.sqlite` | SQLite 3 | Use `sqlite3 {item}/storage/db.sqlite` |
 
 - **KV Store**: a flat JSON object (`{ "key": value }`). Read it with the Read tool.
 - **Files**: arbitrary files stored by the item. List with Glob, read with Read.
-- **SQL Database**: a standard SQLite database. Query with `sqlite3` in the Bash tool (e.g., `sqlite3 .note-data/my-item.html/db.sqlite "SELECT * FROM tablename"`). To discover tables: `sqlite3 ... ".tables"`.
+- **SQL Database**: a standard SQLite database. Query with `sqlite3` in the Bash tool (e.g., `sqlite3 cooking-pasta/storage/db.sqlite "SELECT * FROM tablename"`). To discover tables: `sqlite3 ... ".tables"`.
 
 ### Auto-Persisted Form State
 
@@ -54,7 +56,7 @@ Interactive elements — `<input>` (except password/hidden), `<textarea>`, `<sel
 
 ### Per-Item Memory
 
-Each item can have a `memory.md` file at `.note-data/{itemFilename}/memory.md`.
+Each item can have a `memory.md` file at `{item-folder}/memory.md` (directly in the note folder root).
 
 **You should write to `memory.md` when:**
 - An item is first created — record its purpose (why it exists), requirements (what it should do), and key design decisions (how it works). Revise these if they change over time.
