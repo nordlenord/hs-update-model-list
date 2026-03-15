@@ -1,0 +1,22 @@
+[
+  {
+    "id": "blank",
+    "version": 1,
+    "html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>{{title}}</title>\n</head>\n<body>\n\n</body>\n</html>\n"
+  },
+  {
+    "id": "meeting-notes",
+    "version": 1,
+    "html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Meeting Notes</title>\n</head>\n<body>\n  <h1>{{title}}</h1>\n  <p><strong>Date:</strong> {{date}}</p>\n  <p><strong>Facilitator:</strong> {{author}}</p>\n  <p><strong>Attendees:</strong> </p>\n\n  <h2>Agenda</h2>\n  <ol>\n    <li></li>\n  </ol>\n\n  <h2>Discussion Notes</h2>\n  <p></p>\n\n  <h2>Action Items</h2>\n  <table>\n    <thead>\n      <tr><th>Item</th><th>Owner</th><th>Deadline</th></tr>\n    </thead>\n    <tbody>\n      <tr><td></td><td></td><td></td></tr>\n    </tbody>\n  </table>\n\n  <h2>Next Meeting</h2>\n  <p><strong>Date:</strong> </p>\n</body>\n</html>\n"
+  },
+  {
+    "id": "journal-entry",
+    "version": 1,
+    "html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Journal Entry</title>\n</head>\n<body>\n  <h1>{{title}}</h1>\n  <p><strong>Date:</strong> {{date}}</p>\n  <p><strong>Time:</strong> {{datetime}}</p>\n  <p><strong>Author:</strong> {{author}}</p>\n\n  <h2>Mood / Energy</h2>\n  <p>Mood: &nbsp;&nbsp;&nbsp; Energy: </p>\n\n  <h2>Gratitude</h2>\n  <ul>\n    <li></li>\n    <li></li>\n    <li></li>\n  </ul>\n\n  <h2>Today's Highlights</h2>\n  <p></p>\n\n  <h2>Reflections</h2>\n  <p></p>\n\n  <h2>Free Writing</h2>\n  <p></p>\n</body>\n</html>\n"
+  },
+  {
+    "id": "research-note",
+    "version": 1,
+    "html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Research Note</title>\n</head>\n<body>\n  <h1>{{title}}</h1>\n  <p><strong>Date:</strong> {{date}}</p>\n  <p><strong>Author:</strong> {{author}}</p>\n\n  <h2>Source</h2>\n  <p><strong>URL / Reference:</strong> </p>\n  <p><strong>Author / Publisher:</strong> </p>\n\n  <h2>Summary</h2>\n  <p></p>\n\n  <h2>Key Findings</h2>\n  <ul>\n    <li></li>\n    <li></li>\n    <li></li>\n  </ul>\n\n  <h2>Quotes / Evidence</h2>\n  <blockquote></blockquote>\n\n  <h2>Personal Notes / Analysis</h2>\n  <p></p>\n\n  <h2>Related Topics / Links</h2>\n  <ul>\n    <li></li>\n  </ul>\n</body>\n</html>\n"
+  }
+]
