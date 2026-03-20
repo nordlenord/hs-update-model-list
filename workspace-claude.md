@@ -10,7 +10,9 @@ workspace/
 │   └── storage/
 │       ├── kv.json                 ← key-value store (auto-saved form state in `__autosave` key)
 │       ├── db.sqlite               ← SQLite database
-│       └── files/                  ← arbitrary file storage
+│       ├── files/                  ← arbitrary file storage
+│       │   └── ...
+│       └── scripts/                ← executable scripts (Python, Bash, etc.)
 │           └── ...
 ├── other-item/
 │   ├── index.html
@@ -46,10 +48,27 @@ Each item can store data in up to three storage layers. All data lives under `{i
 | KV Store | `storage/kv.json` | Plain JSON object | Read the file directly |
 | Files | `storage/files/{name}` | Any binary/text file | Read/list files in the directory |
 | SQL Database | `storage/db.sqlite` | SQLite 3 | Use `sqlite3 {item}/storage/db.sqlite` |
+| Scripts | `storage/scripts/{name}` | `.py`, `.sh`, `.js`, etc. | Write script files directly |
 
 - **KV Store**: a flat JSON object (`{ "key": value }`). Read it with the Read tool.
 - **Files**: arbitrary files stored by the item. List with Glob, read with Read.
 - **SQL Database**: a standard SQLite database. Query with `sqlite3` in the Bash tool (e.g., `sqlite3 cooking-pasta/storage/db.sqlite "SELECT * FROM tablename"`). To discover tables: `sqlite3 ... ".tables"`.
+- **Scripts**: executable scripts that the item's HTML can trigger at runtime via `noteScripts.run(name, args)`. See the Scripts section below.
+
+### Scripts
+
+Items can have server-side scripts stored at `{item-folder}/storage/scripts/`. These scripts run on the host machine (not in the browser) and can do things that browser JavaScript cannot — call APIs with secrets, read/write local files, run data processing pipelines, etc.
+
+**How it works:** The item's HTML calls `noteScripts.run('script-name.py', ['arg1', 'arg2'])` which returns a promise resolving to `{ stdout, stderr, exitCode }`. Environment variables `NOTE_ID` and `WORKSPACE_PATH` are available to the script. The working directory is the item's `storage/scripts/` folder.
+
+**Security model:** Scripts are not executable by default. The user must explicitly approve each script via the app's Scripts sidebar panel before the item can trigger it. The item's HTML can only call `run` — it cannot list, add, modify, or delete scripts.
+
+**To add a script to an item:** Write the script file directly to `{item-folder}/storage/scripts/`. Use flat filenames (no subdirectories). Supported extensions: `.py` (runs with `python3`), `.sh` (runs with `bash`), `.js` (runs with `node`), `.rb` (runs with `ruby`). The user will then approve it in the app before it can be triggered.
+
+**When creating an item that needs scripts:**
+1. Write the script(s) to `{item-folder}/storage/scripts/`
+2. In the item's HTML, use `noteScripts.run('script-name.py')` to trigger them (handle the case where the script is not yet approved — `result.error === 'not_approved'`)
+3. Document the scripts and their purpose in the item's `memory.md`
 
 ### Auto-Persisted Form State
 
