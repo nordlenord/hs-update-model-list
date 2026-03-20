@@ -51,7 +51,7 @@ Each item can store data in up to three storage layers. All data lives under `{i
 | Scripts | `storage/scripts/{name}` | `.py`, `.sh`, `.js`, etc. | Write script files directly |
 
 - **KV Store**: a flat JSON object (`{ "key": value }`). Read it with the Read tool.
-- **Files**: arbitrary files stored by the item. List with Glob, read with Read.
+- **Files**: arbitrary files stored by the item. List with Glob, read with Read. At runtime, the item's HTML can import external files via `noteFiles.import(options)` — this opens a native file picker and copies the selected file into `storage/files/`. Pass `{ filters: [{ name: 'PDF', extensions: ['pdf'] }] }` to restrict file types, or call with no arguments to allow any file. Returns the filename on success, or `null` if canceled. The item can then see it with `noteFiles.list()` and process it with a script.
 - **SQL Database**: a standard SQLite database. Query with `sqlite3` in the Bash tool (e.g., `sqlite3 cooking-pasta/storage/db.sqlite "SELECT * FROM tablename"`). To discover tables: `sqlite3 ... ".tables"`.
 - **Scripts**: executable scripts that the item's HTML can trigger at runtime via `noteScripts.run(name, args)`. See the Scripts section below.
 
