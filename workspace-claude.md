@@ -1,6 +1,6 @@
 # Workspace
 
-This is an HTML workspace. Each item is a self-contained folder containing an `index.html` file — ranging from simple notes to interactive micro-applications. Beyond the HTML itself, each item can have per-note memory and up to three storage layers — some items may already have data in these stores. See sections below for details.
+This is an HTML workspace. Each item is a self-contained folder containing an `index.html` file — ranging from simple notes to interactive micro-applications. Beyond the HTML itself, each item can have per-note memory, data storage layers, scripts, and logs — some items may already have data in these stores. See sections below for details.
 
 ```
 workspace/
@@ -86,6 +86,7 @@ Each item has a logging system at `{item-folder}/scripts/logs/`. Logs are viewab
 **Writing logs from scripts:** Scripts can also write directly to their log file at `{item-folder}/scripts/logs/`. Use the `NOTE_ID` and `WORKSPACE_PATH` environment variables to construct the path. Example in Python:
 ```python
 import os
+from datetime import datetime
 log_path = os.path.join(os.environ['WORKSPACE_PATH'], os.environ['NOTE_ID'], 'scripts', 'logs', 'my-script.py.log')
 with open(log_path, 'a') as f:
     f.write(f'[{datetime.now().isoformat()}] Custom log message\n')
