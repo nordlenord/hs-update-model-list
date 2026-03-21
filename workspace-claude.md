@@ -7,12 +7,15 @@ workspace/
 ├── my-item/
 │   ├── index.html                  ← the item itself
 │   ├── memory.md                   ← per-item context for AI
+│   ├── scripts/                    ← executable scripts (Python, Bash, etc.)
+│   │   ├── my-script.py
+│   │   └── logs/                   ← script & frontend logs (auto-generated)
+│   │       ├── my-script.py.log    ← auto-captured script output
+│   │       └── frontend.log        ← frontend logging via noteLog.write()
 │   └── storage/
 │       ├── kv.json                 ← key-value store (auto-saved form state in `__autosave` key)
 │       ├── db.sqlite               ← SQLite database
-│       ├── files/                  ← arbitrary file storage
-│       │   └── ...
-│       └── scripts/                ← executable scripts (Python, Bash, etc.)
+│       └── files/                  ← arbitrary file storage
 │           └── ...
 ├── other-item/
 │   ├── index.html
@@ -36,39 +39,59 @@ When asked to create a note, create a folder (lowercase, kebab-case, e.g., `cook
 
 - Create items as folders containing `index.html` — at the root or inside organizational subfolders (plain folders that group notes, without their own `index.html`)
 - Folder names: lowercase, kebab-case (e.g., `cooking-pasta/`)
-- Do NOT name a note folder `storage` — this is a reserved name for per-item storage
+- Do NOT name a note folder `storage` or `scripts` — these are reserved names
 - Inter-note links use relative paths: `<a href="../other-note/index.html">link text</a>`
 
 ## Per-Item Storage
 
-Each item can store data in up to three storage layers. All data lives under `{item-folder}/storage/` (e.g., `cooking-pasta/storage/`).
+Each item can store data in up to three storage layers. Data storage lives under `{item-folder}/storage/`, while scripts and logs live under `{item-folder}/scripts/`.
 
 | Storage | Path | Format | How to access |
 |---------|------|--------|---------------|
 | KV Store | `storage/kv.json` | Plain JSON object | Read the file directly |
 | Files | `storage/files/{name}` | Any binary/text file | Read/list files in the directory |
 | SQL Database | `storage/db.sqlite` | SQLite 3 | Use `sqlite3 {item}/storage/db.sqlite` |
-| Scripts | `storage/scripts/{name}` | `.py`, `.sh`, `.js`, etc. | Write script files directly |
+| Scripts | `scripts/{name}` | `.py`, `.sh`, `.js`, etc. | Write script files directly |
+| Logs | `scripts/logs/{name}.log` | Text log files | Read the file directly |
 
 - **KV Store**: a flat JSON object (`{ "key": value }`). Read it with the Read tool.
 - **Files**: arbitrary files stored by the item. List with Glob, read with Read. At runtime, the item's HTML can import external files via `noteFiles.import(options)` — this opens a native file picker and copies the selected file into `storage/files/`. Pass `{ filters: [{ name: 'PDF', extensions: ['pdf'] }] }` to restrict file types, or call with no arguments to allow any file. Returns the filename on success, or `null` if canceled. The item can then see it with `noteFiles.list()` and process it with a script.
 - **SQL Database**: a standard SQLite database. Query with `sqlite3` in the Bash tool (e.g., `sqlite3 cooking-pasta/storage/db.sqlite "SELECT * FROM tablename"`). To discover tables: `sqlite3 ... ".tables"`.
 - **Scripts**: executable scripts that the item's HTML can trigger at runtime via `noteScripts.run(name, args)`. See the Scripts section below.
+- **Logs**: log files are stored at `{item-folder}/scripts/logs/`. Script output is automatically captured to `{scriptName}.log`. Frontend logging goes to `frontend.log`. See the Logging section below.
 
 ### Scripts
 
-Items can have server-side scripts stored at `{item-folder}/storage/scripts/`. These scripts run on the host machine (not in the browser) and can do things that browser JavaScript cannot — call APIs with secrets, read/write local files, run data processing pipelines, etc.
+Items can have server-side scripts stored at `{item-folder}/scripts/`. These scripts run on the host machine (not in the browser) and can do things that browser JavaScript cannot — call APIs with secrets, read/write local files, run data processing pipelines, etc.
 
-**How it works:** The item's HTML calls `noteScripts.run('script-name.py', ['arg1', 'arg2'])` which returns a promise resolving to `{ stdout, stderr, exitCode }`. Environment variables `NOTE_ID` and `WORKSPACE_PATH` are available to the script. The working directory is the item's `storage/scripts/` folder.
+**How it works:** The item's HTML calls `noteScripts.run('script-name.py', ['arg1', 'arg2'])` which returns a promise resolving to `{ stdout, stderr, exitCode }`. Environment variables `NOTE_ID` and `WORKSPACE_PATH` are available to the script. The working directory is the item's `scripts/` folder.
 
 **Security model:** Scripts are not executable by default. The user must explicitly approve each script via the app's Scripts sidebar panel before the item can trigger it. The item's HTML can only call `run` — it cannot list, add, modify, or delete scripts.
 
-**To add a script to an item:** Write the script file directly to `{item-folder}/storage/scripts/`. Use flat filenames (no subdirectories). Supported extensions: `.py` (runs with `python3`), `.sh` (runs with `bash`), `.js` (runs with `node`), `.rb` (runs with `ruby`). The user will then approve it in the app before it can be triggered.
+**To add a script to an item:** Write the script file directly to `{item-folder}/scripts/`. Use flat filenames (no subdirectories). Supported extensions: `.py` (runs with `python3`), `.sh` (runs with `bash`), `.js` (runs with `node`), `.rb` (runs with `ruby`). The user will then approve it in the app before it can be triggered.
 
 **When creating an item that needs scripts:**
-1. Write the script(s) to `{item-folder}/storage/scripts/`
+1. Write the script(s) to `{item-folder}/scripts/`
 2. In the item's HTML, use `noteScripts.run('script-name.py')` to trigger them (handle the case where the script is not yet approved — `result.error === 'not_approved'`)
 3. Document the scripts and their purpose in the item's `memory.md`
+
+### Logging
+
+Each item has a logging system at `{item-folder}/scripts/logs/`. Logs are viewable in the app's Logs sidebar panel.
+
+**Script output logs:** When a script runs via `noteScripts.run()`, its stdout/stderr is automatically captured to `{item-folder}/scripts/logs/{script-name}.log` with a timestamp header. No extra code needed in the script — output is captured automatically.
+
+**Frontend logging:** The item's HTML can write log messages via `noteLog.write(message)`. These are written to `{item-folder}/scripts/logs/frontend.log` with ISO timestamps. Use this for debugging, status tracking, or any runtime information the item wants to persist.
+
+**Writing logs from scripts:** Scripts can also write directly to their log file at `{item-folder}/scripts/logs/`. Use the `NOTE_ID` and `WORKSPACE_PATH` environment variables to construct the path. Example in Python:
+```python
+import os
+log_path = os.path.join(os.environ['WORKSPACE_PATH'], os.environ['NOTE_ID'], 'scripts', 'logs', 'my-script.py.log')
+with open(log_path, 'a') as f:
+    f.write(f'[{datetime.now().isoformat()}] Custom log message\n')
+```
+
+**Log rotation:** Log files are automatically rotated at 500KB — older content is trimmed to keep the file manageable.
 
 ### Auto-Persisted Form State
 
