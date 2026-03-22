@@ -216,6 +216,8 @@ async function aiAsk(prompt, opts = {}) {
     context: opts.context || null,
     provider: opts.provider || null,
     allowedTools: opts.allowedTools || null,
+    sessionId: opts.sessionId || null,
+    isResume: opts.isResume || false,
   });
 
   const scriptPromise = noteScripts.run('ai-chat.py', [payload]);
@@ -249,7 +251,7 @@ async function aiAsk(prompt, opts = {}) {
 
   const data = JSON.parse(result.stdout);
   if (data.error) throw new Error(data.error);
-  return data.reply;
+  return { reply: data.reply, sessionId: data.sessionId || null };
 }
 
 // ---- Wire buttons ----
@@ -257,7 +259,7 @@ document.getElementById('translateBtn').addEventListener('click', async () => {
   const output = document.getElementById('result');
   output.textContent = 'Translating...';
   try {
-    const reply = await aiAsk('Translate this to French: ' + getSelectedText(), {
+    const { reply } = await aiAsk('Translate this to French: ' + getSelectedText(), {
       systemPrompt: 'You are a translator. Return only the translation.',
       onStream: (partial) => { output.textContent = partial; },
     });
@@ -270,17 +272,97 @@ document.getElementById('translateBtn').addEventListener('click', async () => {
 
 The `aiAsk` helper handles the script call, streaming poll, and error handling. Each button only needs to call `aiAsk(prompt, options)` and handle the result.
 
+**Return value:** `aiAsk` returns `{ reply, sessionId }`. For one-shot calls you only need `reply`. For multi-turn, pass `sessionId` back on the next call (see Backend Workflows below).
+
 ### `aiAsk` options
 
 | Option | Type | Description |
 |--------|------|-------------|
 | `systemPrompt` | string | System prompt for the AI |
 | `context` | object | Additional context sent with the message |
-| `history` | array | Previous `[{ role, content }]` messages (for multi-turn without chat UI) |
+| `history` | array | Previous `[{ role, content }]` messages (for multi-turn with anthropic-api/openai-compat) |
+| `sessionId` | string | Claude CLI session ID (returned from previous call, for multi-turn) |
+| `isResume` | boolean | Set to `true` when passing a `sessionId` to resume a session |
 | `onStream` | function | Called with `(partialText, status)` during streaming. If omitted, no polling — just waits for final result. |
 | `pollInterval` | number | Milliseconds between polls (default 500) |
 | `provider` | string | Override provider (`'claude-cli'`, `'anthropic-api'`, `'openai-compat'`) |
 | `allowedTools` | string | Claude CLI only: restrict tools |
+
+## Multi-Turn: How It Differs by Provider
+
+| Provider | How history works | What to pass |
+|----------|---|---|
+| `claude-cli` | Real sessions via `--session-id` / `--resume` — Claude manages history server-side | Pass `sessionId` + `isResume: true` on subsequent calls. No `history` needed. |
+| `anthropic-api` | Stateless — full message history sent each call | Pass `history` array with all previous `[{ role, content }]` messages. No sessionId. |
+| `openai-compat` | Stateless — full message history sent each call | Same as anthropic-api. |
+
+## Backend Workflows (Multi-Step AI Pipelines)
+
+For items that need a multi-step AI pipeline in the backend (e.g., "extract → categorize → summarize"), write a workflow script that calls `ai-chat.py` multiple times.
+
+### How it works
+
+1. Item's frontend calls `noteScripts.run('my-workflow.py', [input])`
+2. `my-workflow.py` calls `ai-chat.py` as a subprocess for each step
+3. For claude-cli: captures `sessionId` from step 1, passes it with `isResume` to step 2+
+4. For API providers: builds up the `history` array across steps
+5. Returns the final result as JSON to stdout
+
+### Example workflow script
+
+```python
+#!/usr/bin/env python3
+import json, subprocess, sys, os
+
+def ai_step(message, session_id=None, is_resume=False, system_prompt="", history=None):
+    """Call ai-chat.py and return { reply, sessionId }."""
+    payload = {
+        "message": message,
+        "systemPrompt": system_prompt,
+        "history": history or [],
+        "sessionId": session_id,
+        "isResume": is_resume,
+    }
+    result = subprocess.run(
+        [sys.executable, "ai-chat.py", json.dumps(payload)],
+        capture_output=True, text=True,
+        cwd=os.path.dirname(os.path.abspath(__file__)),
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr)
+    return json.loads(result.stdout)
+
+input_text = sys.argv[1] if len(sys.argv) > 1 else ""
+
+# Step 1: Extract key points
+r1 = ai_step(f"Extract key points from: {input_text}",
+             system_prompt="You extract key points as a bullet list.")
+session_id = r1.get("sessionId")
+
+# Step 2: Categorize (resumes the same session for claude-cli)
+r2 = ai_step("Now categorize each point by topic.",
+             session_id=session_id, is_resume=True)
+
+# Step 3: Summarize
+r3 = ai_step("Create a summary table from the categorized points.",
+             session_id=session_id, is_resume=True)
+
+print(json.dumps({"result": r3["reply"]}))
+```
+
+### Progress tracking
+
+The workflow script can write progress to the stream log between steps so the frontend can show which step is running:
+
+```python
+# In the workflow script, between steps:
+stream_log = os.path.join(os.environ["WORKSPACE_PATH"], os.environ["NOTE_ID"],
+                          "scripts", "logs", "ai-stream.log")
+with open(stream_log, "w") as f:
+    f.write("__STREAMING__\nStep 2/3: Categorizing...\n")
+```
+
+The frontend polls `read-stream.py` as usual and sees the step label.
 
 ## How Streaming Works
 

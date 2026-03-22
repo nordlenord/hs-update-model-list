@@ -171,6 +171,12 @@ class NoteChat {
     if (this.options.provider) payload.provider = this.options.provider;
     if (this.options.allowedTools) payload.allowedTools = this.options.allowedTools;
 
+    // Claude CLI session support: pass sessionId for multi-turn
+    if (conv.sessionId) {
+      payload.sessionId = conv.sessionId;
+      payload.isResume = true;
+    }
+
     // Show streaming bubble
     const streamBubble = this._addBubble('...', 'assistant', true);
     this.isStreaming = true;
@@ -201,6 +207,10 @@ class NoteChat {
           return;
         }
         reply = data.reply;
+        // Store sessionId for claude-cli multi-turn
+        if (data.sessionId) {
+          conv.sessionId = data.sessionId;
+        }
       } catch {
         reply = result.stdout || 'No response';
       }

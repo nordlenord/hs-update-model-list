@@ -4,18 +4,24 @@ AI Chat backend — multi-provider support.
 Streams output to ai-stream.log for frontend polling.
 
 Providers (set via AI_PROVIDER env var):
-  claude-cli     — shells out to `claude -p` (default)
+  claude-cli     — shells out to `claude -p` with session support (default)
   anthropic-api  — calls api.anthropic.com directly (needs ANTHROPIC_API_KEY)
   openai-compat  — calls any OpenAI-compatible endpoint (needs OPENAI_BASE_URL, OPENAI_API_KEY)
 
 Usage:
-  noteScripts.run('ai-chat.py', [JSON.stringify({ message, history, systemPrompt, context })])
+  noteScripts.run('ai-chat.py', [JSON.stringify({ message, history, systemPrompt, context, sessionId })])
+
+Multi-turn:
+  claude-cli uses --session-id/--resume for real conversation sessions.
+  anthropic-api and openai-compat use the history array (messages sent each call).
+  The response includes sessionId — pass it back on subsequent calls.
 """
 
 import json
 import os
 import subprocess
 import sys
+import uuid
 import urllib.request
 import urllib.error
 
@@ -59,28 +65,28 @@ def build_messages(payload):
     return messages, system_prompt
 
 
-def build_claude_prompt(messages, system_prompt):
-    """Build a flat prompt string for claude -p from messages."""
-    parts = []
-    if system_prompt:
-        parts.append(system_prompt)
-    for msg in messages:
-        if msg["role"] == "system":
-            continue
-        if msg["role"] == "user":
-            parts.append(f"\n\nHuman: {msg['content']}")
-        elif msg["role"] == "assistant":
-            parts.append(f"\n\nAssistant: {msg['content']}")
-    return "\n".join(parts) if len(parts) <= 2 else "\n".join(parts)
-
-
-def run_claude_cli(messages, system_prompt, allowed_tools=None):
-    """Run via claude CLI."""
-    # For claude -p, we pass the latest user message as stdin
-    # and use --system-prompt for system prompt, --resume for history
-    prompt = build_claude_prompt(messages, system_prompt)
+def run_claude_cli(messages, system_prompt, allowed_tools=None, session_id=None, is_resume=False):
+    """Run via claude CLI with session support for real multi-turn."""
+    # Build the prompt: on first call include system prompt + user message,
+    # on resume just send the new user message (history is in the session)
+    if is_resume and session_id:
+        # Resuming — only send the latest user message
+        prompt = messages[-1]["content"]
+    else:
+        # First call — include system prompt if any
+        parts = []
+        if system_prompt:
+            parts.append(system_prompt)
+        parts.append(messages[-1]["content"])
+        prompt = "\n\n".join(parts)
 
     cmd = ["claude", "-p"]
+
+    if is_resume and session_id:
+        cmd += ["--resume", session_id]
+    elif session_id:
+        cmd += ["--session-id", session_id]
+
     if AI_MODEL:
         cmd += ["--model", AI_MODEL]
     if allowed_tools:
@@ -246,15 +252,28 @@ def main():
         sys.exit(1)
 
     try:
-        # claude-cli accepts allowed_tools; others don't
         if provider == "claude-cli":
             allowed_tools = payload.get("allowedTools")
-            reply = run_fn(messages, system_prompt, allowed_tools=allowed_tools)
+            session_id = payload.get("sessionId")
+            is_resume = payload.get("isResume", False)
+
+            # Generate a session ID if not provided (enables multi-turn)
+            if not session_id:
+                session_id = str(uuid.uuid4())
+
+            reply = run_fn(
+                messages, system_prompt,
+                allowed_tools=allowed_tools,
+                session_id=session_id,
+                is_resume=is_resume,
+            )
+
+            write_stream("\n__DONE__\n")
+            print(json.dumps({"reply": reply, "sessionId": session_id}))
         else:
             reply = run_fn(messages, system_prompt)
-
-        write_stream("\n__DONE__\n")
-        print(json.dumps({"reply": reply}))
+            write_stream("\n__DONE__\n")
+            print(json.dumps({"reply": reply}))
 
     except FileNotFoundError:
         msg = "claude CLI not found. Make sure it's installed and in PATH."
