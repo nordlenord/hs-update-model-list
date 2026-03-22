@@ -34,6 +34,12 @@ When asked to create a note, create a folder (lowercase, kebab-case, e.g., `cook
 
 - NO full HTML document wrappers — no doctype, html, or body tags
 - An optional `<head>` section is allowed for metadata (e.g., `<meta name="tags">`)
+- It is better to support both light and dark themes. Use CSS custom properties for all colors. Define dark-theme defaults on `:root` and light-theme overrides on `:root[data-theme="light"]`. The app toggles this attribute at runtime. Example:
+  ```css
+  :root { --bg: #1a1a1a; --text: #e0e0e0; }
+  :root[data-theme="light"] { --bg: #ffffff; --text: #1a1a1a; }
+  body { background: var(--bg); color: var(--text); }
+  ```
 
 ## Rules
 
