@@ -19,6 +19,7 @@ Multi-turn:
 
 import json
 import os
+import signal
 import subprocess
 import sys
 import uuid
@@ -28,7 +29,8 @@ import urllib.error
 WORKSPACE = os.environ.get("WORKSPACE_PATH", ".")
 NOTE_ID = os.environ.get("NOTE_ID", "")
 ITEM_PATH = os.path.join(WORKSPACE, NOTE_ID)
-STREAM_LOG = os.path.join(ITEM_PATH, "scripts", "logs", "ai-stream.log")
+LOGS_DIR = os.path.join(ITEM_PATH, "scripts", "logs")
+STREAM_LOG = os.path.join(LOGS_DIR, "ai-stream.log")  # default, overridden by requestId
 
 # Provider config from env
 AI_PROVIDER = os.environ.get("AI_PROVIDER", "claude-cli")
@@ -92,6 +94,12 @@ def run_claude_cli(messages, system_prompt, allowed_tools=None, session_id=None,
     if allowed_tools:
         cmd += ["--allowedTools", allowed_tools]
 
+    # Remove CLAUDECODE env var to prevent "nested session" rejection
+    env = os.environ.copy()
+    env.pop("CLAUDECODE", None)
+
+    # Start claude in its own process group so we can kill it cleanly if
+    # ai-chat.py is terminated (e.g., via noteScripts.stopByName).
     proc = subprocess.Popen(
         cmd,
         stdin=subprocess.PIPE,
@@ -99,16 +107,32 @@ def run_claude_cli(messages, system_prompt, allowed_tools=None, session_id=None,
         stderr=subprocess.PIPE,
         text=True,
         bufsize=1,
+        env=env,
+        preexec_fn=os.setsid,
     )
-    proc.stdin.write(prompt)
-    proc.stdin.close()
 
-    full_output = []
-    for line in proc.stdout:
-        full_output.append(line)
-        write_stream(line)
+    def _kill_child(signum, frame):
+        """On SIGTERM, kill the entire process group (claude + any children)."""
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except OSError:
+            pass
+        sys.exit(1)
 
-    proc.wait()
+    prev_handler = signal.signal(signal.SIGTERM, _kill_child)
+
+    try:
+        proc.stdin.write(prompt)
+        proc.stdin.close()
+
+        full_output = []
+        for line in proc.stdout:
+            full_output.append(line)
+            write_stream(line)
+
+        proc.wait()
+    finally:
+        signal.signal(signal.SIGTERM, prev_handler)
 
     if proc.returncode != 0:
         stderr = proc.stderr.read() if proc.stderr else ""
@@ -148,7 +172,7 @@ def run_anthropic_api(messages, system_prompt):
     )
 
     full_output = []
-    with urllib.request.urlopen(req) as resp:
+    with urllib.request.urlopen(req, timeout=120) as resp:
         buffer = ""
         for chunk in iter(lambda: resp.read(1024).decode("utf-8", errors="replace"), ""):
             buffer += chunk
@@ -196,7 +220,7 @@ def run_openai_compat(messages, system_prompt):
     req = urllib.request.Request(url, data=data, headers=headers)
 
     full_output = []
-    with urllib.request.urlopen(req) as resp:
+    with urllib.request.urlopen(req, timeout=120) as resp:
         buffer = ""
         for chunk in iter(lambda: resp.read(1024).decode("utf-8", errors="replace"), ""):
             buffer += chunk
@@ -228,7 +252,25 @@ PROVIDERS = {
 }
 
 
+def cleanup_old_stream_logs():
+    """Remove stale ai-stream-*.log files older than 5 minutes."""
+    import glob as _glob
+    import time
+    try:
+        cutoff = time.time() - 300
+        for f in _glob.glob(os.path.join(LOGS_DIR, "ai-stream-*.log")):
+            try:
+                if os.path.getmtime(f) < cutoff:
+                    os.remove(f)
+            except OSError:
+                pass
+    except Exception:
+        pass
+
+
 def main():
+    global STREAM_LOG
+
     if len(sys.argv) < 2:
         print(json.dumps({"error": "No input provided"}))
         sys.exit(1)
@@ -237,6 +279,13 @@ def main():
         payload = json.loads(sys.argv[1])
     except json.JSONDecodeError:
         payload = {"message": sys.argv[1]}
+
+    # Use per-request stream log to avoid conflicts between concurrent requests
+    request_id = payload.get("requestId", "")
+    if request_id:
+        STREAM_LOG = os.path.join(LOGS_DIR, f"ai-stream-{request_id}.log")
+
+    cleanup_old_stream_logs()
 
     messages, system_prompt = build_messages(payload)
 

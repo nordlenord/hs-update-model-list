@@ -32,6 +32,7 @@ class NoteChat {
       onResponse: null,       // callback after AI responds: (reply) => {}
       provider: null,         // override AI_PROVIDER env var
       allowedTools: null,     // claude-cli only: e.g. "Bash(sqlite3*)"
+      maxMessagesPerConv: 200, // trim oldest messages beyond this limit per conversation
       ...options,
     };
 
@@ -41,10 +42,16 @@ class NoteChat {
     this.isStreaming = false;
     this.streamOffset = 0;
     this.pollTimer = null;
+    this._requestId = 0;       // incremented per send; polls for stale ids are ignored
+    this._streamRequestId = ''; // unique ID per send, used for per-request stream log files
+    this._pollTimeout = null;  // safety timeout to kill polling if script hangs
+    this._destroyed = false;
+    this._observer = null;     // MutationObserver for auto-destroy on DOM removal
 
     // Bind DOM elements
     this._bindElements();
     this._bindEvents();
+    this._setupAutoDestroy();
     this._loadConversations().then(() => {
       if (this.conversations.length === 0) {
         this._newConversation();
@@ -67,6 +74,7 @@ class NoteChat {
     this.elHistoryBtn   = q('[data-chat-action="history"]');
     this.elHistoryClose = q('[data-chat-action="history-close"]');
     this.elClearBtn     = q('[data-chat-action="clear"]');
+    this.elCancelBtn    = q('[data-chat-action="cancel"]');
 
     if (this.elInput) {
       this.elInput.placeholder = this.options.placeholder;
@@ -118,6 +126,11 @@ class NoteChat {
       });
     }
 
+    // Cancel in-flight request
+    if (this.elCancelBtn) {
+      this.elCancelBtn.addEventListener('click', () => this.cancel());
+    }
+
     // Clear current conversation
     if (this.elClearBtn) {
       this.elClearBtn.addEventListener('click', () => {
@@ -136,7 +149,12 @@ class NoteChat {
 
   async send(text) {
     const message = text || (this.elInput ? this.elInput.value.trim() : '');
-    if (!message || this.isStreaming) return;
+    if (!message) return;
+
+    // If already streaming, cancel the in-flight request before starting a new one
+    if (this.isStreaming) {
+      await this.cancel();
+    }
 
     if (this.elInput) {
       this.elInput.value = '';
@@ -179,23 +197,31 @@ class NoteChat {
 
     // Show streaming bubble
     const streamBubble = this._addBubble('...', 'assistant', true);
+    streamBubble.setAttribute('data-raw', '');
     this.isStreaming = true;
     this.streamOffset = 0;
-    if (this.elSendBtn) this.elSendBtn.disabled = true;
+    const requestId = ++this._requestId;
+    // Unique stream ID for per-request log files (avoids log file conflicts)
+    this._streamRequestId = String(Date.now()) + '-' + String(requestId);
+    payload.requestId = this._streamRequestId;
+    this._setStreamingUI(true);
 
     try {
       const scriptPromise = noteScripts.run(this.options.scriptName, [JSON.stringify(payload)]);
-      this._startPolling(streamBubble);
+      this._startPolling(streamBubble, requestId);
       const result = await scriptPromise;
       this._stopPolling();
 
+      // If this request was cancelled/superseded, don't touch the UI
+      if (requestId !== this._requestId) return;
+
       if (result.error === 'not_approved') {
-        this._finalizeBubble(streamBubble, 'Script not approved. Open the Scripts panel and approve it.', true);
+        this._finalizeError(streamBubble, conv, 'Script not approved. Open the Scripts panel and approve it.');
         return;
       }
 
       if (result.exitCode !== 0) {
-        this._finalizeBubble(streamBubble, `Error: ${result.stderr || 'Script failed'}`, true);
+        this._finalizeError(streamBubble, conv, result.stderr || 'Script failed');
         return;
       }
 
@@ -203,7 +229,7 @@ class NoteChat {
       try {
         const data = JSON.parse(result.stdout);
         if (data.error) {
-          this._finalizeBubble(streamBubble, `Error: ${data.error}`, true);
+          this._finalizeError(streamBubble, conv, data.error);
           return;
         }
         reply = data.reply;
@@ -219,6 +245,7 @@ class NoteChat {
       streamBubble.classList.remove('note-chat-msg-streaming');
 
       conv.messages.push({ role: 'assistant', content: reply, timestamp: new Date().toISOString() });
+      this._trimMessages(conv);
       this._saveConversations();
       this._scrollToBottom();
 
@@ -226,34 +253,86 @@ class NoteChat {
 
     } catch (e) {
       this._stopPolling();
-      this._finalizeBubble(streamBubble, `Error: ${e.message || 'Failed'}`, true);
+      if (requestId !== this._requestId) return;
+      this._finalizeError(streamBubble, conv, e.message || 'Failed');
     } finally {
-      this.isStreaming = false;
-      if (this.elSendBtn) this.elSendBtn.disabled = false;
+      if (requestId === this._requestId) {
+        this.isStreaming = false;
+        this._setStreamingUI(false);
+      }
     }
+  }
+
+  async cancel() {
+    if (!this.isStreaming) return;
+    this._stopPolling();
+    this._requestId++;  // invalidate any in-flight awaits
+    this.isStreaming = false;
+    this._setStreamingUI(false);
+    // Remove the streaming bubble if present
+    const streamingEl = this.elMessages?.querySelector('.note-chat-msg-streaming');
+    if (streamingEl) streamingEl.remove();
+    // Kill the running backend script process
+    await this._killScript(this.options.scriptName);
+  }
+
+  async destroy() {
+    if (this._destroyed) return;
+    this._stopPolling();
+    this._destroyed = true;
+    this._requestId++;
+    if (this._observer) {
+      this._observer.disconnect();
+      this._observer = null;
+    }
+    // Kill any running backend script to prevent orphaned processes
+    await this._killScript(this.options.scriptName);
+  }
+
+  // ---- Process Management ----
+
+  async _killScript(scriptName) {
+    try {
+      if (typeof noteScripts.stopByName === 'function') {
+        await noteScripts.stopByName(scriptName);
+      }
+    } catch {}
+  }
+
+  _setupAutoDestroy() {
+    // Auto-destroy when the container is removed from the DOM (e.g., user navigates away)
+    const parent = this.container.parentNode;
+    if (!parent) return;
+    this._observer = new MutationObserver(() => {
+      if (!document.contains(this.container)) {
+        this.destroy();
+      }
+    });
+    this._observer.observe(parent, { childList: true });
   }
 
   // ---- Streaming ----
 
-  _startPolling(bubble) {
+  _startPolling(bubble, requestId) {
+    // Safety timeout: stop polling after 5 minutes even if no done/error marker
+    this._pollTimeout = setTimeout(() => this._stopPolling(), 5 * 60 * 1000);
+    const streamId = this._streamRequestId;
+
     this.pollTimer = setInterval(async () => {
+      if (this._destroyed || requestId !== this._requestId) {
+        this._stopPolling();
+        return;
+      }
       try {
-        const r = await noteScripts.run(this.options.streamScript, [String(this.streamOffset)]);
+        const r = await noteScripts.run(this.options.streamScript, [String(this.streamOffset), streamId]);
+        if (requestId !== this._requestId) return;
         if (r.exitCode !== 0 || r.error === 'not_approved') return;
         const data = JSON.parse(r.stdout);
         if (data.content && data.content.trim()) {
-          if (this.streamOffset === 0) {
-            bubble.innerHTML = this._renderMarkdown(data.content);
-          } else {
-            // Re-render full accumulated text for correct markdown
-            const prev = bubble.getAttribute('data-raw') || '';
-            const full = prev + data.content;
-            bubble.setAttribute('data-raw', full);
-            bubble.innerHTML = this._renderMarkdown(full);
-          }
-          if (this.streamOffset === 0) {
-            bubble.setAttribute('data-raw', data.content);
-          }
+          const prev = bubble.getAttribute('data-raw') || '';
+          const full = prev + data.content;
+          bubble.setAttribute('data-raw', full);
+          bubble.innerHTML = this._renderMarkdown(full);
           this.streamOffset = data.offset;
         }
         if (data.status === 'done' || data.status === 'error') {
@@ -267,6 +346,10 @@ class NoteChat {
     if (this.pollTimer) {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
+    }
+    if (this._pollTimeout) {
+      clearTimeout(this._pollTimeout);
+      this._pollTimeout = null;
     }
   }
 
@@ -308,6 +391,13 @@ class NoteChat {
     this._renderHistoryList();
   }
 
+  _trimMessages(conv) {
+    const max = this.options.maxMessagesPerConv;
+    if (max > 0 && conv.messages.length > max) {
+      conv.messages = conv.messages.slice(-max);
+    }
+  }
+
   async _loadConversations() {
     try {
       const data = await noteDB.get(this.options.storageKey);
@@ -320,7 +410,9 @@ class NoteChat {
 
   async _saveConversations() {
     try {
-      await noteDB.set(this.options.storageKey, this.conversations);
+      // Keep at most 50 conversations to prevent unbounded noteDB growth
+      const toSave = this.conversations.slice(0, 50);
+      await noteDB.set(this.options.storageKey, toSave);
     } catch {}
   }
 
@@ -335,7 +427,16 @@ class NoteChat {
       if (msg.role === 'user') {
         this._addBubble(msg.content, 'user');
       } else if (msg.role === 'assistant') {
-        this._addBubble(msg.content, 'assistant');
+        if (msg.error) {
+          const el = this._addBubble(msg.content, 'assistant');
+          if (el) {
+            el.classList.remove('note-chat-msg-assistant');
+            el.classList.add('note-chat-msg-error');
+            el.textContent = msg.content;
+          }
+        } else {
+          this._addBubble(msg.content, 'assistant');
+        }
       }
     }
   }
@@ -364,6 +465,20 @@ class NoteChat {
     if (isError) {
       bubble.classList.remove('note-chat-msg-assistant');
       bubble.classList.add('note-chat-msg-error');
+    }
+  }
+
+  _finalizeError(bubble, conv, errorMsg) {
+    const text = `Error: ${errorMsg}`;
+    this._finalizeBubble(bubble, text, true);
+    conv.messages.push({ role: 'assistant', content: text, error: true, timestamp: new Date().toISOString() });
+    this._saveConversations();
+  }
+
+  _setStreamingUI(streaming) {
+    if (this.elSendBtn) this.elSendBtn.disabled = streaming;
+    if (this.elCancelBtn) {
+      this.elCancelBtn.style.display = streaming ? '' : 'none';
     }
   }
 
@@ -442,8 +557,13 @@ class NoteChat {
     // Ordered lists
     html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
 
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // Links — only allow http(s) and anchor hrefs to prevent javascript: XSS
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
+      if (/^https?:\/\/|^#/.test(href)) {
+        return `<a href="${href}" target="_blank" rel="noopener">${label}</a>`;
+      }
+      return label;
+    });
 
     // Paragraphs: convert double newlines
     html = html.replace(/\n\n/g, '</p><p>');

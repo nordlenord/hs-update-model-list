@@ -10,6 +10,7 @@ Returns JSON: { content, status, offset }
 
 Usage:
   noteScripts.run('read-stream.py', [String(offset)])
+  noteScripts.run('read-stream.py', [String(offset), requestId])
 """
 
 import json
@@ -18,9 +19,16 @@ import sys
 
 WORKSPACE = os.environ.get("WORKSPACE_PATH", ".")
 NOTE_ID = os.environ.get("NOTE_ID", "")
-STREAM_LOG = os.path.join(WORKSPACE, NOTE_ID, "scripts", "logs", "ai-stream.log")
+LOGS_DIR = os.path.join(WORKSPACE, NOTE_ID, "scripts", "logs")
 
 offset = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+
+# Per-request log file: if requestId is provided, use ai-stream-{requestId}.log
+request_id = sys.argv[2] if len(sys.argv) > 2 else ""
+if request_id:
+    STREAM_LOG = os.path.join(LOGS_DIR, f"ai-stream-{request_id}.log")
+else:
+    STREAM_LOG = os.path.join(LOGS_DIR, "ai-stream.log")
 
 try:
     if not os.path.exists(STREAM_LOG):

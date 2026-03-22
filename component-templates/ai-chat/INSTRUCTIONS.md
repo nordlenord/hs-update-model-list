@@ -37,6 +37,7 @@ Paste this HTML where you want the chat panel:
   <div class="note-chat-input-area">
     <textarea class="note-chat-input" rows="1" data-no-persist></textarea>
     <button class="note-chat-send-btn" title="Send">&#9654;</button>
+    <button class="note-chat-header-btn" data-chat-action="cancel" title="Cancel" style="display:none">&#9632;</button>
   </div>
 
   <!-- Conversation history overlay -->
@@ -54,6 +55,7 @@ Elements you can remove if not needed:
 - `data-chat-action="history"` button + `.note-chat-history` div — removes conversation history
 - `data-chat-action="new"` button — removes new conversation button
 - `data-chat-action="clear"` button — removes clear button
+- `data-chat-action="cancel"` button — removes cancel button (auto-shown during streaming)
 
 Elements you must keep:
 - `.note-chat-messages` — message display area
@@ -94,6 +96,7 @@ All options passed to `new NoteChat(selector, options)`:
 | `onResponse` | function | `null` | Callback after AI responds: `(reply) => {}`. Use this to trigger side effects (e.g., reload data). |
 | `provider` | string | `null` | Override provider (see Providers below). If null, uses `AI_PROVIDER` env var. |
 | `allowedTools` | string | `null` | Claude CLI only. Restrict tools, e.g. `'Bash(sqlite3*)'` |
+| `maxMessagesPerConv` | number | `200` | Trim oldest messages beyond this limit per conversation (prevents unbounded noteDB growth) |
 
 ## Providers
 

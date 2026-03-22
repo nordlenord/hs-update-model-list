@@ -94,6 +94,10 @@
 .note-chat-msg-streaming {
   opacity: 0.8;
 }
+/* Reset pre-wrap for markdown-rendered assistant messages to avoid double spacing */
+.note-chat-msg-assistant {
+  white-space: normal;
+}
 .note-chat-msg-error {
   background: rgba(255, 69, 58, 0.1);
   border: 1px solid var(--danger, #ff453a);
