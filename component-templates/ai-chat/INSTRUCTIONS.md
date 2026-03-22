@@ -197,6 +197,91 @@ const chat = new NoteChat('#chatPanel', {
 });
 ```
 
+## One-Shot Usage (No Chat UI)
+
+If the item only needs AI-powered buttons (e.g., "Summarize", "Translate", "Fix grammar") without a full chat panel, skip `chat.css`, `chat.js`, and the chat HTML. Only copy the two scripts, then use this pattern:
+
+### Setup
+
+1. Copy `ai-chat.py` and `read-stream.py` into `{item}/scripts/`
+2. Add the `aiAsk` helper function and wire buttons to it:
+
+```js
+// ---- AI one-shot helper (copy once per item) ----
+async function aiAsk(prompt, opts = {}) {
+  const payload = JSON.stringify({
+    message: prompt,
+    systemPrompt: opts.systemPrompt || '',
+    history: opts.history || [],
+    context: opts.context || null,
+    provider: opts.provider || null,
+    allowedTools: opts.allowedTools || null,
+  });
+
+  const scriptPromise = noteScripts.run('ai-chat.py', [payload]);
+
+  // Poll for streaming updates
+  let offset = 0;
+  let pollTimer = null;
+  if (opts.onStream) {
+    pollTimer = setInterval(async () => {
+      try {
+        const r = await noteScripts.run('read-stream.py', [String(offset)]);
+        if (r.exitCode === 0) {
+          const data = JSON.parse(r.stdout);
+          if (data.content && data.content.trim()) {
+            opts.onStream(data.content, data.status);
+          }
+          offset = data.offset;
+          if (data.status === 'done' || data.status === 'error') {
+            clearInterval(pollTimer);
+          }
+        }
+      } catch {}
+    }, opts.pollInterval || 500);
+  }
+
+  const result = await scriptPromise;
+  if (pollTimer) clearInterval(pollTimer);
+
+  if (result.error === 'not_approved') throw new Error('Script not approved');
+  if (result.exitCode !== 0) throw new Error(result.stderr || 'Script failed');
+
+  const data = JSON.parse(result.stdout);
+  if (data.error) throw new Error(data.error);
+  return data.reply;
+}
+
+// ---- Wire buttons ----
+document.getElementById('translateBtn').addEventListener('click', async () => {
+  const output = document.getElementById('result');
+  output.textContent = 'Translating...';
+  try {
+    const reply = await aiAsk('Translate this to French: ' + getSelectedText(), {
+      systemPrompt: 'You are a translator. Return only the translation.',
+      onStream: (partial) => { output.textContent = partial; },
+    });
+    output.textContent = reply;
+  } catch (e) {
+    output.textContent = 'Error: ' + e.message;
+  }
+});
+```
+
+The `aiAsk` helper handles the script call, streaming poll, and error handling. Each button only needs to call `aiAsk(prompt, options)` and handle the result.
+
+### `aiAsk` options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `systemPrompt` | string | System prompt for the AI |
+| `context` | object | Additional context sent with the message |
+| `history` | array | Previous `[{ role, content }]` messages (for multi-turn without chat UI) |
+| `onStream` | function | Called with `(partialText, status)` during streaming. If omitted, no polling — just waits for final result. |
+| `pollInterval` | number | Milliseconds between polls (default 500) |
+| `provider` | string | Override provider (`'claude-cli'`, `'anthropic-api'`, `'openai-compat'`) |
+| `allowedTools` | string | Claude CLI only: restrict tools |
+
 ## How Streaming Works
 
 1. Frontend calls `noteScripts.run('ai-chat.py', [payload])`
