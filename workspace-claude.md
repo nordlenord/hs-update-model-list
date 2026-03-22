@@ -117,3 +117,11 @@ Each item can have a `memory.md` file at `{item-folder}/memory.md` (directly in 
 **Keep `memory.md` concise** — it's included in every prompt when the item is active. Focus on what an AI assistant needs to know to work with the item effectively. Update rather than append when information changes.
 
 Not every item uses storage — these paths only exist for items that have created data.
+
+## Component Templates
+
+Reusable component templates are available at `.component-templates/` in the workspace. Each template has an `INSTRUCTIONS.md` with full usage details — read it before using the template.
+
+| Template | Path | Purpose |
+|----------|------|---------|
+| AI Chat | `.component-templates/ai-chat/` | Drop-in AI chat panel with streaming, multi-provider support, conversation history |
