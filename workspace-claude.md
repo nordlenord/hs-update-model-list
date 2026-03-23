@@ -3,7 +3,7 @@
 This is an HTML workspace. Each item is a self-contained folder containing an `index.html` file — ranging from simple notes to interactive micro-applications. Beyond the HTML itself, each item can have per-note memory, data storage layers, scripts, and logs — some items may already have data in these stores. See sections below for details.
 
 ```
-workspace/
+./
 ├── my-item/
 │   ├── index.html                  ← the item itself
 │   ├── memory.md                   ← per-item context for AI
