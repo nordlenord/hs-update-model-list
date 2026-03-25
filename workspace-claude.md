@@ -81,6 +81,8 @@ Items can have server-side scripts stored at `{item-folder}/scripts/`. These scr
 2. In the item's HTML, use `noteScripts.run('script-name.py')` to trigger them (handle the case where the script is not yet approved — `result.error === 'not_approved'`)
 3. Document the scripts and their purpose in the item's `memory.md`
 
+**Supply chain safety:** Scripts run on the user's machine, so dependencies must be treated with care. When a script needs external packages, pin exact versions (`==`, not `>=`) and only add packages that are truly necessary — every dependency is a potential attack surface.
+
 ### Logging
 
 Each item has a logging system at `{item-folder}/scripts/logs/`. Logs are viewable in the app's Logs sidebar panel.
@@ -117,6 +119,30 @@ Each item can have a `memory.md` file at `{item-folder}/memory.md` (directly in 
 **Keep `memory.md` concise** — it's included in every prompt when the item is active. Focus on what an AI assistant needs to know to work with the item effectively. Update rather than append when information changes.
 
 Not every item uses storage — these paths only exist for items that have created data.
+
+## Cloud Storage
+
+A general-purpose cloud storage API is available for uploading files to S3 and getting URLs that external services can access (e.g. image generation APIs, AI services, sharing). Scripts can call this API to upload, download, or delete files.
+
+**Endpoint:** `POST /storage/presign` (on the sync API: `https://api-hn-dev.helicase.space` / `https://api-hn.helicase.space`)
+
+**Authentication:** Bearer token from the app's Cognito auth. Files are scoped per-user — each user can only access their own files.
+
+**Actions:**
+
+| Action | Request body | Response |
+|--------|-------------|----------|
+| Upload | `{ "action": "upload", "key": "photo.png", "contentType": "image/png", "expiresIn": 3600, "persist": true }` | `{ "presignedUrl": "...", "objectKey": "u/{userId}/photo.png", "expiresIn": 3600 }` |
+| Download | `{ "action": "download", "key": "photo.png", "expiresIn": 3600 }` | `{ "presignedUrl": "...", "objectKey": "u/{userId}/photo.png", "expiresIn": 3600 }` |
+| Delete | `{ "action": "delete", "key": "photo.png" }` | `{ "deleted": "photo.png" }` |
+
+**Parameters:**
+- `key` — filename or path (alphanumeric, dots, hyphens, underscores, slashes). No `..` or leading `/`.
+- `expiresIn` — presigned URL TTL in seconds. Client-controlled, max 7 days (604800s). Default 1 hour.
+- `persist` — if `true` (default), file stays until explicitly deleted. If `false`, auto-deleted after 7 days.
+- `contentType` — MIME type, required for upload.
+
+**Workflow:** Call the endpoint to get a presigned URL, then PUT the file directly to S3 using that URL. The presigned URL or the object key can then be passed to any external service that needs to fetch the file.
 
 ## Component Templates
 
