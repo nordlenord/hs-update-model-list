@@ -151,3 +151,15 @@ Reusable component templates are available at `.component-templates/` in the wor
 | Template | Path | Purpose |
 |----------|------|---------|
 | AI Chat | `.component-templates/ai-chat/` | Drop-in AI chat panel with streaming, multi-provider support, conversation history |
+
+## Live Context (`.context/`)
+
+A read-only folder at the workspace root containing JSON files that reflect the app's live UI state. You can read these to understand the context. **Do not write to this folder** — it is managed by the app.
+
+Files are written atomically (tmp + rename) so partial reads won't occur. The folder is created when a workspace opens and cleaned up on quit.
+
+| File | Contents |
+|------|----------|
+| `meta.json` | `{ updatedAt, app, pid, workspacePath }` — app identity; check `pid` to confirm the app is running |
+| `current-note.json` | `{ updatedAt, active, path, noteTitle, noteId }` — the note currently focused in the UI (`active: false` when none) |
+| `quotes.json` | `{ updatedAt, items: [{ text, path, noteTitle }] }` — user-selected text snippets added as context |
