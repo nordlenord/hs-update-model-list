@@ -60,11 +60,61 @@ Each item can store data in up to three storage layers. Data storage lives under
 | Scripts | `scripts/{name}` | `.py`, `.sh`, `.js`, etc. | Write script files directly |
 | Logs | `scripts/logs/{name}.log` | Text log files | Read the file directly |
 
-- **KV Store**: a flat JSON object (`{ "key": value }`). Read it with the Read tool.
-- **Files**: arbitrary files stored by the item. List with Glob, read with Read. At runtime, the item's HTML can import external files via `noteFiles.import(options)` — this opens a native file picker and copies the selected file into `storage/files/`. Pass `{ filters: [{ name: 'PDF', extensions: ['pdf'] }] }` to restrict file types, or call with no arguments to allow any file. Returns the filename on success, or `null` if canceled. The item can then see it with `noteFiles.list()` and process it with a script.
-- **SQL Database**: a standard SQLite database. Query with `sqlite3` in the Bash tool (e.g., `sqlite3 cooking-pasta/storage/db.sqlite "SELECT * FROM tablename"`). To discover tables: `sqlite3 ... ".tables"`.
+- **KV Store**: a flat JSON object (`{ "key": value }`). Read it with the Read tool. At runtime, the item's HTML can use the `noteDB` API (see Runtime APIs below).
+- **Files**: arbitrary files stored by the item. List with Glob, read with Read. At runtime, the item's HTML can use the `noteFiles` API (see Runtime APIs below).
+- **SQL Database**: a standard SQLite database. Query with `sqlite3` in the Bash tool (e.g., `sqlite3 cooking-pasta/storage/db.sqlite "SELECT * FROM tablename"`). To discover tables: `sqlite3 ... ".tables"`. At runtime, the item's HTML can use the `noteSQL` API (see Runtime APIs below).
 - **Scripts**: executable scripts that the item's HTML can trigger at runtime via `noteScripts.run(name, args)`. See the Scripts section below.
 - **Logs**: log files are stored at `{item-folder}/scripts/logs/`. Script output is automatically captured to `{scriptName}.log`. Frontend logging goes to `frontend.log`. See the Logging section below.
+
+### Runtime JavaScript APIs
+
+These globals are available to the item's HTML at runtime. Use **exactly** these method names — no aliases exist.
+
+#### `noteDB` — Key-Value Store
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `noteDB.get(key)` | `any \| null` | Get a value by key. Returns `null` if not found. |
+| `noteDB.set(key, value)` | `void` | Set a key to any JSON-serializable value. |
+| `noteDB.delete(key)` | `void` | Delete a key. |
+| `noteDB.list()` | `string[]` | List all keys. |
+
+#### `noteFiles` — File Storage
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `noteFiles.load(name)` | `ArrayBuffer \| null` | Load a file's contents as raw bytes. Returns `null` if not found. For text files, decode with `new TextDecoder().decode(buf)`. |
+| `noteFiles.save(name, data)` | `void` | Save a file. `data` can be a `string`, `ArrayBuffer`, or `Uint8Array`. |
+| `noteFiles.delete(name)` | `void` | Delete a file. |
+| `noteFiles.list()` | `string[]` | List all filenames in storage. |
+| `noteFiles.import(options?)` | `string \| null` | Open a native file picker and copy the selected file into storage. Pass `{ filters: [{ name: 'CSV', extensions: ['csv'] }] }` to restrict file types, or call with no arguments to allow any file. Returns the filename on success, or `null` if canceled. |
+
+#### `noteSQL` — SQLite Database
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `noteSQL.exec(sql, params?)` | `{ changes }` | Execute a write statement (INSERT, UPDATE, DELETE, CREATE TABLE, etc.). `params` is an optional array of bind values. Returns the number of rows changed. |
+| `noteSQL.query(sql, params?)` | `object[]` | Execute a read query (SELECT). Returns an array of row objects. |
+
+#### `noteScripts` — Script Execution
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `noteScripts.run(name, args?)` | `{ stdout, stderr, exitCode }` | Run an approved script. `args` is an optional string array. Returns `{ error: 'not_approved' }` if the user hasn't approved the script yet. |
+| `noteScripts.stopByName(name)` | `void` | Stop a running script. |
+
+#### `noteLog` — Frontend Logging
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `noteLog.write(message)` | `void` | Write a timestamped log entry to `scripts/logs/frontend.log`. Max 10,000 characters per message. |
+
+#### `noteAPI` — Item Identity
+
+| Method / Property | Type | Description |
+|-------------------|------|-------------|
+| `noteAPI.noteId` | `string` | The current item's folder name (e.g., `"app-store-explorer"`). |
+| `noteAPI.ready` | `boolean` | Always `true` — can be used to detect the runtime environment. |
 
 ### Scripts
 
