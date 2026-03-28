@@ -47,6 +47,7 @@ When asked to create a note, create a folder (lowercase, kebab-case, e.g., `cook
     --text-dim:   #bec9c7;     /* secondary/muted text */
     --accent:     #4fdad5;     /* primary accent */
     --accent-hover:#006663;    /* accent hover/containers */
+    --accent-text:#101414;     /* text on accent backgrounds */
     --shadow:     rgba(0,0,0,0.3);
   }
   :root[data-theme="light"] {
@@ -58,6 +59,7 @@ When asked to create a note, create a folder (lowercase, kebab-case, e.g., `cook
     --text-dim:   #3e4948;     /* secondary/muted text */
     --accent:     #004c4b;     /* primary accent */
     --accent-hover:#006664;    /* accent hover/containers */
+    --accent-text:#ffffff;     /* text on accent backgrounds */
     --shadow:     rgba(18,30,29,0.1);
   }
   body { background: var(--bg); color: var(--text); }
