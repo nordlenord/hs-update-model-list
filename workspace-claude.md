@@ -34,10 +34,32 @@ When asked to create a note, create a folder (lowercase, kebab-case, e.g., `cook
 
 - NO full HTML document wrappers — no doctype, html, or body tags
 - An optional `<head>` section is allowed for metadata (e.g., `<meta name="tags">`)
-- It is better to support both light and dark themes. Use CSS custom properties for all colors. Define dark-theme defaults on `:root` and light-theme overrides on `:root[data-theme="light"]`. The app toggles this attribute at runtime. Example:
+- It is better to support both light and dark themes. Use CSS custom properties for all colors. Define dark-theme defaults on `:root` and light-theme overrides on `:root[data-theme="light"]`. The app toggles this attribute at runtime.
+  The recommended palette below matches the host app's Veridian Lumina theme so notes feel visually integrated. Use these as defaults, but always follow the user's guidance if they specify different colors.
   ```css
-  :root { --bg: #1a1a1a; --text: #e0e0e0; }
-  :root[data-theme="light"] { --bg: #ffffff; --text: #1a1a1a; }
+  :root {
+    /* Dark theme (default) */
+    --bg:         #101414;     /* main background */
+    --surface:    #1c2020;     /* cards, containers */
+    --surface2:   #272b2a;     /* elevated surfaces */
+    --border:     #3e4948;     /* borders, dividers */
+    --text:       #e0e0e0;     /* primary text */
+    --text-dim:   #bec9c7;     /* secondary/muted text */
+    --accent:     #4fdad5;     /* primary accent */
+    --accent-hover:#006663;    /* accent hover/containers */
+    --shadow:     rgba(0,0,0,0.3);
+  }
+  :root[data-theme="light"] {
+    --bg:         #effcfb;     /* main background */
+    --surface:    #ffffff;     /* cards, containers */
+    --surface2:   #e9f6f5;     /* elevated surfaces */
+    --border:     #bec9c7;     /* borders, dividers */
+    --text:       #121e1d;     /* primary text */
+    --text-dim:   #3e4948;     /* secondary/muted text */
+    --accent:     #004c4b;     /* primary accent */
+    --accent-hover:#006664;    /* accent hover/containers */
+    --shadow:     rgba(18,30,29,0.1);
+  }
   body { background: var(--bg); color: var(--text); }
   ```
 
