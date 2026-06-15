@@ -1,0 +1,24 @@
+# Paths to exclude when copying this project to an open-source folder.
+# Usage: rsync -av --exclude-from=.opensource-exclude ./ ../hs-update-model-list-opensource/
+
+# Git history (fresh git init in the new folder)
+.git/
+
+# macOS / editor cruft
+.DS_Store
+
+# Logs and stray dev output
+*.log
+
+# Environment files (should never appear here, but guard anyway)
+.env
+.env.*
+
+# Dependencies and build artifacts (none today, but guard for future scripts)
+node_modules/
+dist/
+out/
+
+# This exclude list itself and the copy script
+.opensource-exclude
+scripts/copy-to-opensource.sh

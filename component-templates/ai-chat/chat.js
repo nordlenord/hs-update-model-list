@@ -241,10 +241,18 @@ class NoteChat {
         reply = result.stdout || 'No response';
       }
 
-      streamBubble.innerHTML = this._renderMarkdown(reply);
+      const rawContent = streamBubble.getAttribute('data-raw') || '';
+      const hasTools = rawContent.includes('__TOOL_USE__');
+      if (hasTools) {
+        streamBubble.innerHTML = this._renderSegments(this._parseSegments(rawContent));
+      } else {
+        streamBubble.innerHTML = this._renderMarkdown(reply);
+      }
       streamBubble.classList.remove('note-chat-msg-streaming');
 
-      conv.messages.push({ role: 'assistant', content: reply, timestamp: new Date().toISOString() });
+      const msgData = { role: 'assistant', content: reply, timestamp: new Date().toISOString() };
+      if (hasTools) msgData.rawContent = rawContent;
+      conv.messages.push(msgData);
       this._trimMessages(conv);
       this._saveConversations();
       this._scrollToBottom();
@@ -332,7 +340,11 @@ class NoteChat {
           const prev = bubble.getAttribute('data-raw') || '';
           const full = prev + data.content;
           bubble.setAttribute('data-raw', full);
-          bubble.innerHTML = this._renderMarkdown(full);
+          if (full.includes('__TOOL_USE__') || full.includes('__TOOL_RESULT__')) {
+            bubble.innerHTML = this._renderSegments(this._parseSegments(full));
+          } else {
+            bubble.innerHTML = this._renderMarkdown(full);
+          }
           this.streamOffset = data.offset;
         }
         if (data.status === 'done' || data.status === 'error') {
@@ -434,6 +446,8 @@ class NoteChat {
             el.classList.add('note-chat-msg-error');
             el.textContent = msg.content;
           }
+        } else if (msg.rawContent) {
+          this._addBubbleHtml(this._renderSegments(this._parseSegments(msg.rawContent)), 'assistant');
         } else {
           this._addBubble(msg.content, 'assistant');
         }
@@ -456,6 +470,84 @@ class NoteChat {
     this.elMessages.appendChild(el);
     this._scrollToBottom();
     return el;
+  }
+
+  _addBubbleHtml(html, role) {
+    if (!this.elMessages) return null;
+    const el = document.createElement('div');
+    el.className = `note-chat-msg note-chat-msg-${role}`;
+    el.innerHTML = html;
+    this.elMessages.appendChild(el);
+    this._scrollToBottom();
+    return el;
+  }
+
+  // ---- Tool Call Parsing & Rendering ----
+
+  _parseSegments(raw) {
+    const segments = [];
+    const re = /\n?__TOOL_(USE|RESULT)__(.*)/g;
+    let lastIdx = 0;
+    let match;
+    while ((match = re.exec(raw)) !== null) {
+      const textBefore = raw.slice(lastIdx, match.index);
+      if (textBefore.trim()) {
+        segments.push({ type: 'text', content: textBefore.trim() });
+      }
+      try {
+        const data = JSON.parse(match[2]);
+        if (match[1] === 'USE') {
+          segments.push({ type: 'tool_use', name: data.name, input: data.input });
+        } else {
+          segments.push({ type: 'tool_result', output: data.output || '' });
+        }
+      } catch { /* skip malformed markers */ }
+      lastIdx = re.lastIndex;
+    }
+    const remaining = raw.slice(lastIdx);
+    if (remaining.trim()) {
+      segments.push({ type: 'text', content: remaining.trim() });
+    }
+    return segments;
+  }
+
+  _renderSegments(segments) {
+    let html = '';
+    for (const seg of segments) {
+      if (seg.type === 'text') {
+        html += this._renderMarkdown(seg.content);
+      } else if (seg.type === 'tool_use') {
+        const { label, detail } = this._toolDetail(seg.name, seg.input);
+        html += '<div class="note-chat-tool"><span class="note-chat-tool-name">'
+          + this._escHtml(label) + '</span>';
+        if (detail) {
+          html += '<span class="note-chat-tool-detail" title="'
+            + this._escHtml(detail) + '">' + this._escHtml(detail) + '</span>';
+        }
+        html += '</div>';
+      } else if (seg.type === 'tool_result') {
+        const output = seg.output || '';
+        html += '<details class="note-chat-tool-result"><summary>Result</summary><pre>'
+          + this._escHtml(output) + '</pre></details>';
+      }
+    }
+    return html;
+  }
+
+  _toolDetail(name, input) {
+    if (!input) return { label: name || 'Tool', detail: null };
+    switch (name) {
+      case 'Bash': return { label: input.description || 'Run command', detail: input.command || null };
+      case 'Read': return { label: 'Read', detail: input.file_path || null };
+      case 'Edit': return { label: 'Edit', detail: input.file_path || null };
+      case 'Write': return { label: 'Write', detail: input.file_path || null };
+      case 'Glob': return { label: 'Glob', detail: input.pattern || null };
+      case 'Grep': return { label: 'Grep', detail: input.pattern || null };
+      case 'Agent': return { label: 'Agent', detail: input.description || null };
+      case 'WebSearch': return { label: 'Search', detail: input.query || null };
+      case 'WebFetch': return { label: 'Fetch', detail: input.url || null };
+      default: return { label: name || 'Tool', detail: null };
+    }
   }
 
   _finalizeBubble(bubble, text, isError = false) {

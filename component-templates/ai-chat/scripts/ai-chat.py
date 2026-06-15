@@ -68,7 +68,11 @@ def build_messages(payload):
 
 
 def run_claude_cli(messages, system_prompt, allowed_tools=None, session_id=None, is_resume=False):
-    """Run via claude CLI with session support for real multi-turn."""
+    """Run via claude CLI with stream-json output for structured events.
+
+    Returns (reply_text, tool_calls) where tool_calls is a list of
+    {name, input, output} dicts (empty when no tools were used).
+    """
     # Build the prompt: on first call include system prompt + user message,
     # on resume just send the new user message (history is in the session)
     if is_resume and session_id:
@@ -82,7 +86,7 @@ def run_claude_cli(messages, system_prompt, allowed_tools=None, session_id=None,
         parts.append(messages[-1]["content"])
         prompt = "\n\n".join(parts)
 
-    cmd = ["claude", "-p"]
+    cmd = ["claude", "-p", "--output-format", "stream-json", "--verbose"]
 
     if is_resume and session_id:
         cmd += ["--resume", session_id]
@@ -125,10 +129,58 @@ def run_claude_cli(messages, system_prompt, allowed_tools=None, session_id=None,
         proc.stdin.write(prompt)
         proc.stdin.close()
 
-        full_output = []
+        full_text = []
+        tool_calls = []
+
         for line in proc.stdout:
-            full_output.append(line)
-            write_stream(line)
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                # Plain text fallback (shouldn't happen with stream-json)
+                full_text.append(line + "\n")
+                write_stream(line + "\n")
+                continue
+
+            etype = event.get("type", "")
+
+            if etype == "content_block_delta":
+                text = (event.get("delta") or {}).get("text", "")
+                if text:
+                    full_text.append(text)
+                    write_stream(text)
+
+            elif etype == "assistant":
+                blocks = (event.get("message") or {}).get("content") or []
+                for block in blocks:
+                    if block.get("type") == "tool_use":
+                        tool_info = {
+                            "name": block.get("name", ""),
+                            "input": block.get("input", {}),
+                        }
+                        tool_calls.append(tool_info)
+                        write_stream(
+                            "\n__TOOL_USE__"
+                            + json.dumps(tool_info, ensure_ascii=False)
+                            + "\n"
+                        )
+
+            elif etype in ("tool", "tool_result"):
+                content = ""
+                if event.get("tool") and event["tool"].get("content"):
+                    content = event["tool"]["content"]
+                elif event.get("content"):
+                    content = event["content"]
+                output = str(content)
+                if tool_calls and "output" not in tool_calls[-1]:
+                    tool_calls[-1]["output"] = output
+                write_stream(
+                    "\n__TOOL_RESULT__"
+                    + json.dumps({"output": output}, ensure_ascii=False)
+                    + "\n"
+                )
 
         proc.wait()
     finally:
@@ -138,7 +190,7 @@ def run_claude_cli(messages, system_prompt, allowed_tools=None, session_id=None,
         stderr = proc.stderr.read() if proc.stderr else ""
         raise RuntimeError(f"Claude CLI failed (exit {proc.returncode}): {stderr}")
 
-    return "".join(full_output).strip()
+    return "".join(full_text).strip(), tool_calls
 
 
 def run_anthropic_api(messages, system_prompt):
@@ -310,7 +362,7 @@ def main():
             if not session_id:
                 session_id = str(uuid.uuid4())
 
-            reply = run_fn(
+            reply, tool_calls = run_fn(
                 messages, system_prompt,
                 allowed_tools=allowed_tools,
                 session_id=session_id,
@@ -318,7 +370,10 @@ def main():
             )
 
             write_stream("\n__DONE__\n")
-            print(json.dumps({"reply": reply, "sessionId": session_id}))
+            result = {"reply": reply, "sessionId": session_id}
+            if tool_calls:
+                result["toolCalls"] = tool_calls
+            print(json.dumps(result))
         else:
             reply = run_fn(messages, system_prompt)
             write_stream("\n__DONE__\n")
