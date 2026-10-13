@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "collections": {
+    "favorites": {
+      "source": "items",
+      "where": {
+        "===": [
+          {
+            "var": "favorite"
+          },
+          true
+        ]
+      },
+      "sort": "favoriteOrder"
+    }
+  },
+  "surfaces": {
+    "sidebar": {
+      "hideDotFolders": true,
+      "sections": [
+        {
+          "id": "favorites",
+          "title": "Favorites",
+          "view": "list",
+          "collection": "favorites",
+          "hideWhenEmpty": true
+        },
+        {
+          "id": "files",
+          "title": "Notes",
+          "view": "tree",
+          "source": "items",
+          "hiddenFolders": [
+            ".claude",
+            ".vscode",
+            ".context",
+            "_templates"
+          ]
+        }
+      ]
+    }
+  }
+}
