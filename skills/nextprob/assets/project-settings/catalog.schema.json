@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NextProb settings catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "definitions"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "definitions": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "$ref": "#/$defs/definition"
+      }
+    }
+  },
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*\\u0000).*[^/]$"
+    },
+    "definition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "group",
+        "description",
+        "match",
+        "format",
+        "views",
+        "creation"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,63}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "group": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "match": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "paths": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/relativePath"
+              }
+            },
+            "directories": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/relativePath"
+              }
+            }
+          }
+        },
+        "format": {
+          "enum": [
+            "text",
+            "markdown",
+            "json",
+            "line-rules"
+          ]
+        },
+        "views": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "source",
+              "preview",
+              "structured",
+              "rules"
+            ]
+          }
+        },
+        "creation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "initialText"
+          ],
+          "properties": {
+            "mode": {
+              "const": "explicit"
+            },
+            "initialText": {
+              "type": "string"
+            }
+          }
+        },
+        "managedSections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "start",
+              "end",
+              "label"
+            ],
+            "properties": {
+              "start": {
+                "type": "string",
+                "minLength": 1
+              },
+              "end": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "schema": {
+          "$ref": "#/$defs/relativePath"
+        }
+      }
+    }
+  }
+}

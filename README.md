@@ -18,3 +18,10 @@ npm run check:official-skills
 ```
 
 This refreshes the generated assets here and the app's bundled offline snapshot. Commit the content changes and the matching app snapshot together in their respective repositories. Publishing the content repository makes compatible remote updates available; the bundled copy lets the app install skills without a network connection.
+
+
+## Project settings definitions
+
+`settings/catalog.json` is the authoritative, versioned catalog of file-backed project settings shown by NextProb. The target files own their values; definitions supply discovery paths, labels, descriptions, reusable editor formats, creation templates, schemas, and managed-section markers. To add a resource supported by an existing editor, add a definition and any referenced schema here. `settings/catalog.schema.json` documents the contract. New runtime behavior or parser capabilities can still require application changes.
+
+From the NextProb application repository run `npm run sync:official-skills -- ../hs-update-model-list/skills` to refresh generated schemas, app offline definitions, and the agent-reference assets inside the NextProb skill. Do not edit the generated `skills/nextprob/assets/project-settings/` copies. Increment the NextProb skill manifest version when its content changes and run `npm run check:official-skills` before packaging.

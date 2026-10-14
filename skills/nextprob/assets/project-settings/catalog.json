@@ -1,0 +1,232 @@
+{
+  "version": 1,
+  "definitions": [
+    {
+      "id": "git-ignore",
+      "title": "Git ignore rules",
+      "group": "Sync & Git",
+      "description": "Ordered Git ignore patterns. Comments and negated rules retain their position. NextProb separately maintains exclusions for its unmodified installed skills.",
+      "match": {
+        "paths": [
+          ".gitignore"
+        ]
+      },
+      "format": "line-rules",
+      "views": [
+        "rules",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "managedSections": [
+        {
+          "start": "# NextProb managed skills (auto-updated)",
+          "end": "# /NextProb managed skills",
+          "label": "NextProb installed skills (automatically updated)"
+        }
+      ]
+    },
+    {
+      "id": "sync-ignore",
+      "title": "Sync ignore rules",
+      "group": "Sync & Git",
+      "description": "Project sync exclusions. Built-in exclusions and unmodified NextProb skill folders also apply independently of this file.",
+      "match": {
+        "paths": [
+          ".syncignore"
+        ]
+      },
+      "format": "line-rules",
+      "views": [
+        "rules",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      }
+    },
+    {
+      "id": "project-display",
+      "title": "Project display",
+      "group": "Display",
+      "description": "Controls NextProb sidebar sections and collections. Omitted values use application defaults; invalid edits retain the last valid runtime configuration.",
+      "match": {
+        "paths": [
+          "nextprob.config.json"
+        ]
+      },
+      "format": "json",
+      "views": [
+        "structured",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": "{\n  \"version\": 1\n}\n"
+      },
+      "schema": "project-config.schema.json"
+    },
+    {
+      "id": "agent-instructions",
+      "title": "Agent instructions",
+      "group": "Agent Instructions & Skills",
+      "description": "Project instructions for agents. The marked NextProb default section is refreshed automatically; add personal instructions outside it.",
+      "match": {
+        "paths": [
+          "AGENTS.md"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "managedSections": [
+        {
+          "start": "<!-- APP-DEFAULT (do not edit — this section is auto-updated) -->",
+          "end": "<!-- /APP-DEFAULT -->",
+          "label": "NextProb default instructions (automatically updated)"
+        }
+      ]
+    },
+    {
+      "id": "claude-instructions",
+      "title": "Claude instructions",
+      "group": "Agent Instructions & Skills",
+      "description": "Claude instruction files at the project root and in its native configuration folder. Preserve any marked NextProb default section.",
+      "match": {
+        "paths": [
+          "CLAUDE.md",
+          ".claude/CLAUDE.md"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "managedSections": [
+        {
+          "start": "<!-- APP-DEFAULT (do not edit — this section is auto-updated) -->",
+          "end": "<!-- /APP-DEFAULT -->",
+          "label": "NextProb default instructions (automatically updated)"
+        }
+      ]
+    },
+    {
+      "id": "gemini-instructions",
+      "title": "Gemini instructions",
+      "group": "Agent Instructions & Skills",
+      "description": "Gemini project instructions. Preserve any marked NextProb default section and edit personal instructions outside it.",
+      "match": {
+        "paths": [
+          "GEMINI.md",
+          ".gemini/GEMINI.md"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "managedSections": [
+        {
+          "start": "<!-- APP-DEFAULT (do not edit — this section is auto-updated) -->",
+          "end": "<!-- /APP-DEFAULT -->",
+          "label": "NextProb default instructions (automatically updated)"
+        }
+      ]
+    },
+    {
+      "id": "claude-resources",
+      "title": "Claude resources",
+      "group": "Agent Instructions & Skills",
+      "description": "Browse project-scoped configuration, instructions, and skills. Unrecognized text resources are available in the source editor.",
+      "match": {
+        "directories": [
+          ".claude"
+        ]
+      },
+      "format": "text",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      }
+    },
+    {
+      "id": "agent-resources",
+      "title": "Agent resources",
+      "group": "Agent Instructions & Skills",
+      "description": "Browse project-scoped skills and instruction resources. Installed NextProb skill files are maintained by the app.",
+      "match": {
+        "directories": [
+          ".agents"
+        ]
+      },
+      "format": "text",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      }
+    },
+    {
+      "id": "gemini-resources",
+      "title": "Gemini resources",
+      "group": "Agent Instructions & Skills",
+      "description": "Browse project-scoped Gemini configuration and instruction resources.",
+      "match": {
+        "directories": [
+          ".gemini"
+        ]
+      },
+      "format": "text",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      }
+    },
+    {
+      "id": "editor-config",
+      "title": "Editor configuration",
+      "group": "Developer Tools",
+      "description": "Shared editor conventions. Edit the original INI-style text; its semantics are interpreted by your editor.",
+      "match": {
+        "paths": [
+          ".editorconfig"
+        ]
+      },
+      "format": "text",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      }
+    }
+  ]
+}
