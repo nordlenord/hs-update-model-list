@@ -1,4 +1,7 @@
 CLAUDE.md
 
+# === OS junk ===
+.DS_Store
+
 # === LOCAL ONLY (below this line is never synced to opensource) ===
 tmp/
