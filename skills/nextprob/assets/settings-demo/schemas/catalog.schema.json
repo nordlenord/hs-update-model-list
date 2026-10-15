@@ -24,6 +24,17 @@
       "items": {
         "$ref": "#/$defs/page"
       }
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Publication revision, independent of the version 1 file format. Increment for every shipped catalog or schema change.",
+      "maximum": 9007199254740991
+    },
+    "minAppVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Minimum compatible application version for this catalog."
     }
   },
   "$defs": {

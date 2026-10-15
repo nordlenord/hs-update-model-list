@@ -24,6 +24,12 @@ A missing file shows a meaningful empty state and an explicit Configure/Add acti
 
 Managed package status comes from application ownership and inventory checks, not just a directory name. Identical copies across tools share a card with all installation locations. A changed copy remains inspectable/editable and is shown separately. Do not conceal user modifications as app internals.
 
+## Catalog updates
+
+NextProb 0.3.4+ compares catalog publication `revision` independently of format `version: 1`, checks `minAppVersion`, and chooses the newest compatible bundled or cached catalog. Equal revisions prefer the bundled copy. Older/incompatible downloads do not replace it, and unversioned legacy catalogs count as revision zero. A normal app update does not require clearing the cache. Project definitions/pages remain overrides on the selected defaults; their file values are preserved.
+
+Publication metadata belongs to maintained distribution catalogs. Users registering settings in `nextprob.settings.json` need only the version/definitions/pages contract, without revision fields.
+
 ## Page contract
 
 `nextprob.settings.json` can contain `pages` alongside `version: 1` and `definitions`. Local pages extend built-ins or replace matching page IDs. Removing the local file restores defaults; invalid updates retain the last valid pages and definitions for the session.
