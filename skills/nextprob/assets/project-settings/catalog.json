@@ -38,7 +38,8 @@
                 ],
                 "title": "Hide files and folders starting with “.”",
                 "control": "toggle",
-                "default": true
+                "default": true,
+                "description": "Keep hidden project files out of folder views."
               }
             ]
           },
@@ -350,14 +351,17 @@
             ],
             "collapsed": true
           }
-        ]
+        ],
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "emptyMessage": "Using the default sidebar layout."
       }
     },
     {
       "id": "git-ignore",
       "title": "Git ignore rules",
       "group": "Sync & Git",
-      "description": "Ordered Git ignore patterns. Comments and negated rules retain their position. NextProb separately maintains exclusions for its unmodified installed skills.",
+      "description": "Patterns are evaluated in order. Comments and exceptions are preserved.",
       "match": {
         "paths": [
           ".gitignore"
@@ -381,14 +385,19 @@
       ],
       "ui": {
         "advanced": true,
-        "order": 100
+        "order": 100,
+        "saveLabel": "Save changes",
+        "createLabel": "Save exclusions",
+        "defaultView": "rules",
+        "editor": "rules",
+        "emptyMessage": "No custom exclusions. Application exclusions still apply."
       }
     },
     {
       "id": "sync-ignore",
       "title": "Sync ignore rules",
       "group": "Sync & Git",
-      "description": "Project sync exclusions. Built-in exclusions and unmodified NextProb skill folders also apply independently of this file.",
+      "description": "Patterns are evaluated in order. Comments and exceptions are preserved.",
       "match": {
         "paths": [
           ".syncignore"
@@ -405,14 +414,19 @@
       },
       "ui": {
         "advanced": true,
-        "order": 101
+        "order": 101,
+        "saveLabel": "Save changes",
+        "createLabel": "Save exclusions",
+        "defaultView": "rules",
+        "editor": "rules",
+        "emptyMessage": "No custom exclusions. Application exclusions still apply."
       }
     },
     {
       "id": "project-settings-definitions",
-      "title": "Project Settings layout",
-      "group": "Display",
-      "description": "User-owned definitions that add settings files to Project Settings or replace built-in definitions by ID. Local schema paths are relative to the project root. Invalid edits retain the last valid definitions; deleting this file restores built-ins.",
+      "title": "Customize settings panel",
+      "group": "Advanced",
+      "description": "Register project files and choose how they appear in settings.",
       "match": {
         "paths": [
           "nextprob.settings.json"
@@ -430,14 +444,197 @@
       "schema": "catalog.schema.json",
       "ui": {
         "advanced": true,
-        "order": 103
+        "order": 103,
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "defaultView": "structured",
+        "editor": "catalog",
+        "layout": [
+          {
+            "type": "list",
+            "path": [
+              "definitions"
+            ],
+            "title": "Registered settings",
+            "description": "These project definitions extend or replace the built-in definitions.",
+            "keyField": "id",
+            "itemTitle": [
+              "title"
+            ],
+            "removable": true,
+            "itemTemplate": {
+              "id": "custom-settings",
+              "title": "New settings",
+              "group": "AI assistance",
+              "description": "",
+              "match": {
+                "paths": [
+                  "tools/preferences.json"
+                ]
+              },
+              "format": "json",
+              "views": [
+                "structured",
+                "source"
+              ],
+              "creation": {
+                "mode": "explicit",
+                "initialText": "{}\n"
+              },
+              "ui": {
+                "saveLabel": "Save changes",
+                "createLabel": "Create configuration"
+              }
+            },
+            "addLabel": "+ Register settings",
+            "children": [
+              {
+                "type": "field",
+                "path": [
+                  "title"
+                ],
+                "title": "Page title"
+              },
+              {
+                "type": "field",
+                "path": [
+                  "group"
+                ],
+                "title": "Category"
+              },
+              {
+                "type": "field",
+                "path": [
+                  "description"
+                ],
+                "title": "Description"
+              },
+              {
+                "type": "group",
+                "title": "File and editor",
+                "collapsed": true,
+                "children": [
+                  {
+                    "type": "field",
+                    "path": [
+                      "id"
+                    ],
+                    "title": "Definition ID"
+                  },
+                  {
+                    "type": "field",
+                    "path": [
+                      "match",
+                      "paths"
+                    ],
+                    "title": "File paths",
+                    "control": "lines"
+                  },
+                  {
+                    "type": "field",
+                    "path": [
+                      "format"
+                    ],
+                    "title": "File format",
+                    "control": "select",
+                    "options": [
+                      {
+                        "value": "text",
+                        "label": "text"
+                      },
+                      {
+                        "value": "markdown",
+                        "label": "markdown"
+                      },
+                      {
+                        "value": "json",
+                        "label": "json"
+                      },
+                      {
+                        "value": "line-rules",
+                        "label": "line-rules"
+                      },
+                      {
+                        "value": "ini",
+                        "label": "ini"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "field",
+                    "path": [
+                      "views"
+                    ],
+                    "title": "Available views",
+                    "control": "lines"
+                  },
+                  {
+                    "type": "field",
+                    "path": [
+                      "schema"
+                    ],
+                    "title": "Schema path",
+                    "optional": true
+                  },
+                  {
+                    "type": "field",
+                    "path": [
+                      "creation"
+                    ],
+                    "title": "Creation template",
+                    "control": "json"
+                  }
+                ]
+              },
+              {
+                "type": "group",
+                "title": "Advanced presentation",
+                "collapsed": true,
+                "children": [
+                  {
+                    "type": "field",
+                    "path": [
+                      "ui"
+                    ],
+                    "title": "Layout and presentation",
+                    "control": "json"
+                  },
+                  {
+                    "type": "field",
+                    "path": [
+                      "discovery"
+                    ],
+                    "title": "Folder discovery policy",
+                    "control": "json"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "group",
+            "title": "Page navigation",
+            "collapsed": true,
+            "children": [
+              {
+                "type": "field",
+                "path": [
+                  "pages"
+                ],
+                "title": "Page definitions",
+                "control": "json",
+                "description": "Advanced: pages group registered resources. Built-in pages remain unless overridden by ID."
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": "agent-instructions",
       "title": "Agent instructions",
       "group": "Agent Instructions & Skills",
-      "description": "Project instructions for agents. The marked NextProb default section is refreshed automatically; add personal instructions outside it.",
+      "description": "Write guidance for assistants working in this project. Application instructions are kept separately.",
       "match": {
         "paths": [
           "AGENTS.md"
@@ -461,14 +658,19 @@
       ],
       "ui": {
         "advanced": true,
-        "order": 104
+        "order": 104,
+        "saveLabel": "Save changes",
+        "createLabel": "Add instructions",
+        "defaultView": "preview",
+        "editor": "document",
+        "emptyMessage": "No custom instructions."
       }
     },
     {
       "id": "claude-instructions",
       "title": "Claude instructions",
       "group": "Agent Instructions & Skills",
-      "description": "Claude instruction files at the project root and in its native configuration folder. Preserve any marked NextProb default section.",
+      "description": "Write guidance for assistants working in this project. Application instructions are kept separately.",
       "match": {
         "paths": [
           "CLAUDE.md",
@@ -493,14 +695,19 @@
       ],
       "ui": {
         "advanced": true,
-        "order": 105
+        "order": 105,
+        "saveLabel": "Save changes",
+        "createLabel": "Add instructions",
+        "defaultView": "preview",
+        "editor": "document",
+        "emptyMessage": "No custom instructions."
       }
     },
     {
       "id": "gemini-instructions",
       "title": "Gemini instructions",
       "group": "Agent Instructions & Skills",
-      "description": "Gemini project instructions. Preserve any marked NextProb default section and edit personal instructions outside it.",
+      "description": "Write guidance for assistants working in this project. Application instructions are kept separately.",
       "match": {
         "paths": [
           "GEMINI.md",
@@ -525,12 +732,17 @@
       ],
       "ui": {
         "advanced": true,
-        "order": 106
+        "order": 106,
+        "saveLabel": "Save changes",
+        "createLabel": "Add instructions",
+        "defaultView": "preview",
+        "editor": "document",
+        "emptyMessage": "No custom instructions."
       }
     },
     {
       "id": "claude-resources",
-      "title": "Claude resources",
+      "title": "Claude configuration folder",
       "group": "Agent Instructions & Skills",
       "description": "Browse project-scoped configuration, instructions, and skills. Unrecognized text resources are available in the source editor.",
       "match": {
@@ -548,12 +760,61 @@
       },
       "ui": {
         "advanced": true,
-        "order": 107
+        "order": 107,
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration"
+      },
+      "discovery": {
+        "mode": "browser",
+        "exclude": [
+          {
+            "patterns": [
+              "**/.env",
+              "**/.env.*",
+              "**/*credential*",
+              "**/*secret*",
+              "**/*token*",
+              "**/auth.json",
+              "**/*.pem",
+              "**/*.key"
+            ],
+            "reason": "Credentials are excluded from general settings discovery."
+          },
+          {
+            "patterns": [
+              "**/cache/",
+              "**/logs/",
+              "**/history/",
+              "**/sessions/",
+              "**/*.log",
+              "**/*.db",
+              "**/*.sqlite*",
+              "**/node_modules/",
+              ".git/"
+            ],
+            "reason": "Caches, logs, and internal state are not settings."
+          },
+          {
+            "patterns": [
+              "skills/"
+            ],
+            "reason": "Skill packages are presented in Skills."
+          },
+          {
+            "patterns": [
+              "CLAUDE.md",
+              "GEMINI.md",
+              "settings.local.json",
+              "settings.json"
+            ],
+            "reason": "Known documents and tool settings have dedicated pages."
+          }
+        ]
       }
     },
     {
       "id": "agent-resources",
-      "title": "Agent resources",
+      "title": "Agent configuration folder",
       "group": "Agent Instructions & Skills",
       "description": "Browse project-scoped skills and instruction resources. Installed NextProb skill files are maintained by the app.",
       "match": {
@@ -571,12 +832,61 @@
       },
       "ui": {
         "advanced": true,
-        "order": 108
+        "order": 108,
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration"
+      },
+      "discovery": {
+        "mode": "browser",
+        "exclude": [
+          {
+            "patterns": [
+              "**/.env",
+              "**/.env.*",
+              "**/*credential*",
+              "**/*secret*",
+              "**/*token*",
+              "**/auth.json",
+              "**/*.pem",
+              "**/*.key"
+            ],
+            "reason": "Credentials are excluded from general settings discovery."
+          },
+          {
+            "patterns": [
+              "**/cache/",
+              "**/logs/",
+              "**/history/",
+              "**/sessions/",
+              "**/*.log",
+              "**/*.db",
+              "**/*.sqlite*",
+              "**/node_modules/",
+              ".git/"
+            ],
+            "reason": "Caches, logs, and internal state are not settings."
+          },
+          {
+            "patterns": [
+              "skills/"
+            ],
+            "reason": "Skill packages are presented in Skills."
+          },
+          {
+            "patterns": [
+              "CLAUDE.md",
+              "GEMINI.md",
+              "settings.local.json",
+              "settings.json"
+            ],
+            "reason": "Known documents and tool settings have dedicated pages."
+          }
+        ]
       }
     },
     {
       "id": "gemini-resources",
-      "title": "Gemini resources",
+      "title": "Gemini configuration folder",
       "group": "Agent Instructions & Skills",
       "description": "Browse project-scoped Gemini configuration and instruction resources.",
       "match": {
@@ -594,7 +904,56 @@
       },
       "ui": {
         "advanced": true,
-        "order": 109
+        "order": 109,
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration"
+      },
+      "discovery": {
+        "mode": "browser",
+        "exclude": [
+          {
+            "patterns": [
+              "**/.env",
+              "**/.env.*",
+              "**/*credential*",
+              "**/*secret*",
+              "**/*token*",
+              "**/auth.json",
+              "**/*.pem",
+              "**/*.key"
+            ],
+            "reason": "Credentials are excluded from general settings discovery."
+          },
+          {
+            "patterns": [
+              "**/cache/",
+              "**/logs/",
+              "**/history/",
+              "**/sessions/",
+              "**/*.log",
+              "**/*.db",
+              "**/*.sqlite*",
+              "**/node_modules/",
+              ".git/"
+            ],
+            "reason": "Caches, logs, and internal state are not settings."
+          },
+          {
+            "patterns": [
+              "skills/"
+            ],
+            "reason": "Skill packages are presented in Skills."
+          },
+          {
+            "patterns": [
+              "CLAUDE.md",
+              "GEMINI.md",
+              "settings.local.json",
+              "settings.json"
+            ],
+            "reason": "Known documents and tool settings have dedicated pages."
+          }
+        ]
       }
     },
     {
@@ -607,8 +966,9 @@
           ".editorconfig"
         ]
       },
-      "format": "text",
+      "format": "ini",
       "views": [
+        "structured",
         "source"
       ],
       "creation": {
@@ -617,8 +977,554 @@
       },
       "ui": {
         "advanced": true,
-        "order": 110
+        "order": 110,
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "editor": "ini",
+        "defaultView": "structured",
+        "emptyMessage": "No shared editor conventions.",
+        "iniFields": [
+          {
+            "key": "root",
+            "title": "Stop looking for parent configuration",
+            "scope": "root",
+            "options": [
+              {
+                "value": "true",
+                "label": "Yes"
+              },
+              {
+                "value": "false",
+                "label": "No"
+              }
+            ]
+          },
+          {
+            "key": "indent_style",
+            "title": "Indent using",
+            "scope": "section",
+            "options": [
+              {
+                "value": "space",
+                "label": "Spaces"
+              },
+              {
+                "value": "tab",
+                "label": "Tabs"
+              }
+            ]
+          },
+          {
+            "key": "indent_size",
+            "title": "Indent size",
+            "scope": "section",
+            "type": "text"
+          },
+          {
+            "key": "end_of_line",
+            "title": "Line endings",
+            "scope": "section",
+            "options": [
+              {
+                "value": "lf",
+                "label": "LF"
+              },
+              {
+                "value": "crlf",
+                "label": "CRLF"
+              },
+              {
+                "value": "cr",
+                "label": "CR"
+              }
+            ]
+          },
+          {
+            "key": "charset",
+            "title": "Text encoding",
+            "scope": "section",
+            "options": [
+              {
+                "value": "utf-8",
+                "label": "UTF-8"
+              },
+              {
+                "value": "utf-8-bom",
+                "label": "UTF-8-BOM"
+              },
+              {
+                "value": "latin1",
+                "label": "LATIN1"
+              },
+              {
+                "value": "utf-16be",
+                "label": "UTF-16BE"
+              },
+              {
+                "value": "utf-16le",
+                "label": "UTF-16LE"
+              }
+            ]
+          },
+          {
+            "key": "trim_trailing_whitespace",
+            "title": "Remove trailing spaces",
+            "scope": "section",
+            "options": [
+              {
+                "value": "true",
+                "label": "Yes"
+              },
+              {
+                "value": "false",
+                "label": "No"
+              }
+            ]
+          },
+          {
+            "key": "insert_final_newline",
+            "title": "End files with a newline",
+            "scope": "section",
+            "options": [
+              {
+                "value": "true",
+                "label": "Yes"
+              },
+              {
+                "value": "false",
+                "label": "No"
+              }
+            ]
+          }
+        ]
       }
+    },
+    {
+      "id": "claude-skills",
+      "title": "Claude",
+      "group": "AI assistance",
+      "description": "",
+      "match": {
+        "directories": [
+          ".claude/skills"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "defaultView": "preview",
+        "editor": "document"
+      },
+      "discovery": {
+        "mode": "packages",
+        "packageFile": "SKILL.md",
+        "exclude": [
+          {
+            "patterns": [
+              "**/.env",
+              "**/.env.*",
+              "**/*credential*",
+              "**/*secret*",
+              "**/*token*",
+              "**/auth.json",
+              "**/*.pem",
+              "**/*.key"
+            ],
+            "reason": "Credentials are excluded from general settings discovery."
+          },
+          {
+            "patterns": [
+              "**/cache/",
+              "**/logs/",
+              "**/history/",
+              "**/sessions/",
+              "**/*.log",
+              "**/*.db",
+              "**/*.sqlite*",
+              "**/node_modules/",
+              ".git/"
+            ],
+            "reason": "Caches, logs, and internal state are not settings."
+          }
+        ],
+        "packageViews": [
+          {
+            "title": "Documentation",
+            "path": "references"
+          },
+          {
+            "title": "Examples",
+            "path": "assets/settings-demo"
+          }
+        ]
+      }
+    },
+    {
+      "id": "agents-skills",
+      "title": "Codex / compatible agents",
+      "group": "AI assistance",
+      "description": "",
+      "match": {
+        "directories": [
+          ".agents/skills"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "defaultView": "preview",
+        "editor": "document"
+      },
+      "discovery": {
+        "mode": "packages",
+        "packageFile": "SKILL.md",
+        "exclude": [
+          {
+            "patterns": [
+              "**/.env",
+              "**/.env.*",
+              "**/*credential*",
+              "**/*secret*",
+              "**/*token*",
+              "**/auth.json",
+              "**/*.pem",
+              "**/*.key"
+            ],
+            "reason": "Credentials are excluded from general settings discovery."
+          },
+          {
+            "patterns": [
+              "**/cache/",
+              "**/logs/",
+              "**/history/",
+              "**/sessions/",
+              "**/*.log",
+              "**/*.db",
+              "**/*.sqlite*",
+              "**/node_modules/",
+              ".git/"
+            ],
+            "reason": "Caches, logs, and internal state are not settings."
+          }
+        ],
+        "packageViews": [
+          {
+            "title": "Documentation",
+            "path": "references"
+          },
+          {
+            "title": "Examples",
+            "path": "assets/settings-demo"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gemini-skills",
+      "title": "Gemini",
+      "group": "AI assistance",
+      "description": "",
+      "match": {
+        "directories": [
+          ".gemini/skills"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "defaultView": "preview",
+        "editor": "document"
+      },
+      "discovery": {
+        "mode": "packages",
+        "packageFile": "SKILL.md",
+        "exclude": [
+          {
+            "patterns": [
+              "**/.env",
+              "**/.env.*",
+              "**/*credential*",
+              "**/*secret*",
+              "**/*token*",
+              "**/auth.json",
+              "**/*.pem",
+              "**/*.key"
+            ],
+            "reason": "Credentials are excluded from general settings discovery."
+          },
+          {
+            "patterns": [
+              "**/cache/",
+              "**/logs/",
+              "**/history/",
+              "**/sessions/",
+              "**/*.log",
+              "**/*.db",
+              "**/*.sqlite*",
+              "**/node_modules/",
+              ".git/"
+            ],
+            "reason": "Caches, logs, and internal state are not settings."
+          }
+        ],
+        "packageViews": [
+          {
+            "title": "Documentation",
+            "path": "references"
+          },
+          {
+            "title": "Examples",
+            "path": "assets/settings-demo"
+          }
+        ]
+      }
+    },
+    {
+      "id": "claude-settings",
+      "title": "Claude settings",
+      "group": "AI assistance",
+      "description": "Advanced configuration interpreted by this tool. Existing values are preserved; no tool behavior is inferred.",
+      "match": {
+        "paths": [
+          ".claude/settings.json",
+          ".claude/settings.local.json"
+        ]
+      },
+      "format": "json",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": "{}\n"
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "emptyMessage": "No custom tool configuration. Open an editor only if you want to add it."
+      }
+    },
+    {
+      "id": "gemini-settings",
+      "title": "Gemini settings",
+      "group": "AI assistance",
+      "description": "Advanced configuration interpreted by this tool. Existing values are preserved; no tool behavior is inferred.",
+      "match": {
+        "paths": [
+          ".gemini/settings.json",
+          ".gemini/settings.local.json"
+        ]
+      },
+      "format": "json",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": "{}\n"
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "emptyMessage": "No custom tool configuration. Open an editor only if you want to add it."
+      }
+    }
+  ],
+  "pages": [
+    {
+      "id": "sidebar",
+      "title": "Sidebar",
+      "group": "Appearance",
+      "sections": [
+        {
+          "title": "Sidebar",
+          "definitions": [
+            "project-display"
+          ],
+          "view": "resource"
+        }
+      ],
+      "order": 0
+    },
+    {
+      "id": "excluded-files",
+      "title": "Excluded files",
+      "group": "Files & sync",
+      "sections": [
+        {
+          "title": "Sync exclusions",
+          "definitions": [
+            "sync-ignore"
+          ],
+          "view": "resource",
+          "description": "Choose what stays out of project sync."
+        },
+        {
+          "title": "Git exclusions",
+          "definitions": [
+            "git-ignore"
+          ],
+          "view": "resource",
+          "collapsed": true,
+          "description": "Choose what Git ignores. These rules are separate from sync exclusions."
+        }
+      ],
+      "order": 10,
+      "description": "Choose which files are excluded from sync and version control."
+    },
+    {
+      "id": "instructions",
+      "title": "Instructions",
+      "group": "AI assistance",
+      "sections": [
+        {
+          "title": "Shared project instructions",
+          "definitions": [
+            "agent-instructions"
+          ],
+          "view": "documents"
+        },
+        {
+          "title": "Claude",
+          "definitions": [
+            "claude-instructions"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Gemini",
+          "definitions": [
+            "gemini-instructions"
+          ],
+          "view": "documents",
+          "collapsed": true
+        }
+      ],
+      "order": 20,
+      "description": "Guide AI assistants working in this project."
+    },
+    {
+      "id": "skills",
+      "title": "Skills",
+      "group": "AI assistance",
+      "sections": [
+        {
+          "title": "Available skills",
+          "definitions": [
+            "agents-skills",
+            "claude-skills",
+            "gemini-skills"
+          ],
+          "view": "packages",
+          "emptyMessage": "No skill packages are installed in this project."
+        }
+      ],
+      "order": 30,
+      "description": "Reusable instructions available to your AI assistants."
+    },
+    {
+      "id": "tool-settings",
+      "title": "Tool settings",
+      "group": "AI assistance",
+      "sections": [
+        {
+          "title": "Claude",
+          "definitions": [
+            "claude-settings"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Gemini",
+          "definitions": [
+            "gemini-settings"
+          ],
+          "view": "documents",
+          "collapsed": true
+        }
+      ],
+      "order": 40,
+      "description": "Tool-specific configuration. Unrecognized options remain available in the source editor."
+    },
+    {
+      "id": "editor-conventions",
+      "title": "Editor conventions",
+      "group": "Advanced",
+      "sections": [
+        {
+          "title": "Editor conventions",
+          "definitions": [
+            "editor-config"
+          ],
+          "view": "resource"
+        }
+      ],
+      "order": 100,
+      "advanced": true
+    },
+    {
+      "id": "settings-panel",
+      "title": "Customize settings panel",
+      "group": "Advanced",
+      "sections": [
+        {
+          "title": "Customize settings panel",
+          "definitions": [
+            "project-settings-definitions"
+          ],
+          "view": "resource"
+        }
+      ],
+      "order": 110,
+      "advanced": true
+    },
+    {
+      "id": "other-files",
+      "title": "Other configuration files",
+      "group": "Advanced",
+      "sections": [
+        {
+          "title": "Project tool folders",
+          "definitions": [
+            "claude-resources",
+            "agent-resources",
+            "gemini-resources"
+          ],
+          "view": "browser"
+        }
+      ],
+      "order": 120,
+      "advanced": true,
+      "description": "Browse additional configuration only when needed. Skill packages have their own details view."
     }
   ]
 }

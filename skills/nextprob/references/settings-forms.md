@@ -45,9 +45,9 @@ The same renderer supports unrelated settings without app changes:
 
 Use a schema for types, numeric bounds, validation, and shared field metadata. A layout controls presentation; it does not implement the external tool's settings semantics.
 
-## Sidebar demo
+## Complete settings demo
 
-[The demo definition](../assets/settings-demo/nextprob.settings.json) is a standalone project override demonstrating the same form as the built-in page. [The demo configuration](../assets/settings-demo/nextprob.config.json) includes Favorites, All notes, Templates, and a disabled Files section. Its schema is [schemas/nextprob-config.schema.json](../assets/settings-demo/schemas/nextprob-config.schema.json).
+[The demo definition](../assets/settings-demo/nextprob.settings.json) is a standalone project override demonstrating every built-in page and resource policy, including the sidebar form. See [task-based settings pages](settings-pages.md) for the full resource mapping. [The demo configuration](../assets/settings-demo/nextprob.config.json) includes Favorites, All notes, Templates, and a disabled Files section. Its schema is [schemas/nextprob-config.schema.json](../assets/settings-demo/schemas/nextprob-config.schema.json).
 
 For an explicitly requested demo in a new/scratch project, copy these files to that project's root, preserving the `schemas/` relative path. In an existing project, inspect its files, merge only the requested definition/settings, and preserve current sections and collections unless asked to replace them. Do not copy a full demo over a user's configuration. The app renders this definition with no bespoke sidebar form code. To change only presentation, copy the definition/schema and keep the existing `nextprob.config.json`.
 

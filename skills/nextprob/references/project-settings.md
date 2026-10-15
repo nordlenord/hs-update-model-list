@@ -18,7 +18,7 @@ Use the user's project-root `nextprob.settings.json` for requests to expose anot
 
 Local definitions extend built-ins. A local definition with an existing ID replaces that entire built-in definition; copy its required fields from the bundled catalog, then change only the requested presentation. Choose a unique ID when registering another resource. Relative target paths and local schema paths are relative to the project root. A copied built-in schema reference does not point into the installed skill: omit that optional field or copy the referenced schema asset into the project and update its path. Keep paths within the project, without symlinks or parent traversal.
 
-The version 1 contract is [catalog.schema.json](../assets/project-settings/catalog.schema.json). Each definition provides `id`, `title`, `group`, `description`, exact `match.paths` or bounded `match.directories`, `format`, `views`, and an explicit creation template. Optional `schema` points to a JSON schema within the project; optional `ui` defines navigation priority and form presentation (see [settings form layouts](settings-forms.md)); optional `managedSections` declares delimiters for content maintained by the application. Empty templates suit text and line rules; JSON templates must form a valid initial document. A template seeds a new file only, never mirrors current values.
+The version 1 contract is [catalog.schema.json](../assets/project-settings/catalog.schema.json). Optional top-level `pages` group related definitions into task-based navigation; see [task-based settings pages](settings-pages.md). Each definition provides `id`, `title`, `group`, `description`, exact `match.paths` or bounded `match.directories`, `format`, `views`, and an explicit creation template. Optional `schema` points to a JSON schema within the project; optional `ui` defines navigation priority and form presentation (see [settings form layouts](settings-forms.md)); optional `managedSections` declares delimiters for content maintained by the application. Empty templates suit text and line rules; JSON templates must form a valid initial document. A template seeds a new file only, never mirrors current values.
 
 Supported formats and views:
 
@@ -26,6 +26,7 @@ Supported formats and views:
 - `markdown`: `preview`, `source`.
 - `json`: `structured`, `source`.
 - `line-rules`: `rules`, `source`.
+- `ini`: `structured`, `source`.
 
 Directory matches browse text children; separate file definitions can specialize their interpretation. JSON schemas may supply field `title`, `description`, types, enum choices, and validation. Without a form layout, friendly JSON editing displays configured values; use Source to add or remove fields. Declarative forms can show omitted defaults, group controls, and edit lists and named collections. Preserve the original formatting when editing a value.
 

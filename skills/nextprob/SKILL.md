@@ -7,7 +7,7 @@ description: Customize a user’s NextProb project settings, sidebar, ignore rul
 
 NextProb reads settings directly from project files. Change those files for user requests; the UI is another editor over the same source of truth.
 
-For settings UI requests, use the progressive form design by default: common options first, named sections, and collapsed advanced controls. Read [settings form layouts](references/settings-forms.md) for the reusable contract and a runnable sidebar demo. Prefer a declarative layout in `nextprob.settings.json` over application-specific UI code.
+For settings UI requests, read [task-based settings pages](references/settings-pages.md) for the complete resource policy, page composition, package browsing, and exclusions. Use that design by default. For individual forms, use progressive disclosure: common options first, named sections, and collapsed advanced controls. Read [settings form layouts](references/settings-forms.md) for the reusable contract and a runnable sidebar demo. Prefer a declarative layout in `nextprob.settings.json` over application-specific UI code.
 
 For ignore rules, agent instructions, or other project settings, read [file-backed settings](references/project-settings.md). It also explains how to register additional settings files or change their presentation in the user’s own project. For sidebar customization, use `nextprob.config.json` and the guidance below.
 
