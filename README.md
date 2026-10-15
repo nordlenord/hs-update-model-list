@@ -34,6 +34,9 @@ Settings catalogs declare a positive `revision` (publication order) separately f
 
 ## Settings HTML interface
 
+NextProb 0.3.5 adds declarative `agents` profiles and `agentCategory` pages. Built-in profiles for Claude, Codex, Gemini CLI, OpenCode, and Pi belong in `settings/catalog.json`; the app provides the generic engine and ships synchronized offline copies. Users can add, edit, and remove custom registrations through AI assistance, stored in their project's `nextprob.settings.json`, without deleting their agent files. Shared paths appear once. See [verified native paths and sources](settings/AGENT-PATHS.md) and the [profile contract](skills/nextprob/references/settings-pages.md#agent-profiles-035).
+
+
 `settings/ui/` is the maintained source of the default settings HTML note, stylesheet, bootstrap, and reusable renderer. `ui/manifest.json` declares the settings bridge API version, minimum compatible application version, and every asset in the publication. The application owns its bridge, authorization, validation, persistence, and conflict handling; this repository owns how the default interface presents those capabilities.
 
 Edit these resources here, increment `settings/catalog.json`'s publication `revision` for a UI change, and run the sibling app's `npm run sync:official-skills -- ../hs-update-model-list/skills`. This generates the app's offline `project-settings/ui/` snapshot and portable skill reference assets. Do not edit those generated copies. Run `npm run check:official-skills` in the app before packaging. A publication includes its catalog, schemas, manifest, and complete UI together; compatible downloaded publications remain cached for offline use.

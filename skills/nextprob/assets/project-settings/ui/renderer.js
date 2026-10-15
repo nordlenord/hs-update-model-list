@@ -159,7 +159,65 @@
   function revisionChanged(snapshot, incoming) {
     return snapshot.revision !== incoming.revision || snapshot.exists !== incoming.exists;
   }
-  if (typeof module !== 'undefined') module.exports = { jsonFields, fieldSchema, replaceField, lines, revisionChanged, formDocument, writeValue, writeFormValue, documentParts, iniSections, editIni };
+  const agentCategories = ['instructions', 'skills', 'settings', 'resources'];
+  function agentPaths(value) {
+    const paths = [...new Set(String(value || '').split(/\r?\n/).map(p => p.trim()).filter(Boolean))];
+    if (paths.some(p => !/^(?![A-Za-z]:)(?![/~])(?!.*\\)(?!.*(?:^|\/)\.{1,2}(?:\/|$))(?!.*\/\/)(?!.*[\x00-\x1f]).*[^/]$/.test(p))) throw new Error('Use project-relative paths without trailing slashes, backslashes, or .. segments.');
+    return paths;
+  }
+  // Register paths only; the file service creates agent files through explicit saves.
+  function registerAgent(registry, values, existingId, knownIds = [], knownDefinitions = []) {
+    if (!registry || typeof registry !== 'object' || Array.isArray(registry) || !Array.isArray(registry.definitions) || (registry.agents !== undefined && !Array.isArray(registry.agents))) throw new Error('Repair nextprob.settings.json before changing agents.');
+    const next = copy(registry), agents = next.agents || [];
+    const previous = existingId && agents.find(a => a.id === existingId);
+    if (existingId && !previous) throw new Error('This custom agent registration has changed. Reopen the form.');
+    const title = String(values.title || '').trim();
+    if (!title || title.length > 100) throw new Error('Enter an agent name of 1–100 characters.');
+    const stem = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32).replace(/-$/, '') || 'agent';
+    let id = existingId || `custom-${stem}`, suffix = 2;
+    while (!existingId && [...knownIds, ...agents.map(a => a.id)].includes(id)) id = `custom-${stem}-${suffix++}`;
+    const paths = Object.fromEntries(agentCategories.map(category => [category, agentPaths(values[category])]));
+    if (!Object.values(paths).some(v => v.length)) throw new Error('Add at least one instruction file, skill directory, settings file, or resource directory.');
+    const profile = { id, title }, generated = [];
+    for (const category of agentCategories) {
+      profile[category] = [];
+      const matchKey = ['skills', 'resources'].includes(category) ? 'directories' : 'paths';
+      let pending = [...paths[category]];
+      const candidates = knownDefinitions.filter(d => !isGeneratedAgentDefinition(id, d.id) && (d.match?.[matchKey] || []).length && (!['skills', 'resources'].includes(category) || d.discovery?.mode === (category === 'skills' ? 'packages' : 'browser')));
+      for (const candidate of candidates) {
+        const registered = candidate.match[matchKey];
+        if (registered.every(p => pending.includes(p))) { profile[category].push(candidate.id); pending = pending.filter(p => !registered.includes(p)); }
+      }
+      if (knownDefinitions.some(d => !isGeneratedAgentDefinition(id, d.id) && (d.match?.[matchKey] || []).some(p => pending.includes(p)))) throw new Error(`These ${category} paths overlap registered resources. Use the complete existing path group or choose different paths.`);
+      const groups = category === 'settings' ? pending.map(p => [p]) : pending.length ? [pending] : [];
+      groups.forEach((items, i) => {
+        const definitionId = `${id}-${category}${category === 'settings' ? `-${i + 1}` : ''}`;
+        const format = category === 'instructions' || category === 'skills' ? 'markdown' : category === 'resources' ? 'text' : /\.jsonc$/i.test(items[0]) ? 'jsonc' : /\.json$/i.test(items[0]) ? 'json' : /\.toml$/i.test(items[0]) ? 'toml' : 'text';
+        const folder = ['skills', 'resources'].includes(category);
+        const def = { id: definitionId, title: `${title} ${category}`, description: `Project ${category} for ${title}.`, group: 'AI assistance', match: { [folder ? 'directories' : 'paths']: items }, format, views: category === 'instructions' || category === 'skills' ? ['preview', 'source'] : ['source'], creation: { mode: 'explicit', initialText: format === 'json' || format === 'jsonc' ? '{}\n' : '' } };
+        if (category === 'instructions' || category === 'skills') def.ui = { editor: 'document', defaultView: 'preview' };
+        if (folder) def.discovery = { mode: category === 'skills' ? 'packages' : 'browser', ...(category === 'skills' ? { packageFile: 'SKILL.md' } : {}), exclude: [{ patterns: ['**/.env', '**/.env.*', '**/*credential*', '**/*secret*', '**/*token*', '**/auth.json', '**/*.pem', '**/*.key'], reason: 'Credentials are excluded from settings discovery.' }, { patterns: ['**/cache/', '**/logs/', '**/history/', '**/sessions/', '**/*.log', '**/*.db', '**/*.sqlite*', '**/node_modules/', '.git/'], reason: 'Caches, logs, and internal state are not settings.' }] };
+        generated.push(def); profile[category].push(definitionId);
+      });
+    }
+    const owned = new Set(previous ? agentCategories.flatMap(c => previous[c] || []).filter(ref => isGeneratedAgentDefinition(id, ref)) : []);
+    const retained = new Set([...agents.filter(a => a.id !== id).flatMap(a => agentCategories.flatMap(c => a[c] || [])), ...(next.pages || []).flatMap(p => p.sections.flatMap(s => s.definitions))]);
+    next.definitions = next.definitions.filter(d => !owned.has(d.id) || retained.has(d.id));
+    if (generated.some(d => next.definitions.some(old => old.id === d.id) || (knownIds.includes(d.id) && !owned.has(d.id)))) throw new Error('A generated resource ID is already registered. Choose another agent name or repair the registry.');
+    next.definitions.push(...generated); next.agents = [...agents.filter(a => a.id !== id), profile];
+    return next;
+  }
+  function isGeneratedAgentDefinition(id, ref) { return ['instructions', 'skills', 'resources'].some(c => ref === `${id}-${c}`) || (ref.startsWith(`${id}-settings-`) && /^[1-9][0-9]*$/.test(ref.slice(`${id}-settings-`.length))); }
+  function removeAgent(registry, id) {
+    const next = copy(registry), profile = next.agents?.find(a => a.id === id);
+    if (!profile || !Array.isArray(next.definitions)) throw new Error('This custom agent registration has changed. Reopen the form.');
+    next.agents = next.agents.filter(a => a.id !== id);
+    const referenced = new Set([...next.agents.flatMap(a => agentCategories.flatMap(c => a[c] || [])), ...(next.pages || []).flatMap(p => p.sections.flatMap(s => s.definitions))]);
+    const owned = new Set(agentCategories.flatMap(c => profile[c] || []).filter(ref => isGeneratedAgentDefinition(id, ref)));
+    next.definitions = next.definitions.filter(d => !owned.has(d.id) || referenced.has(d.id));
+    return next;
+  }
+  if (typeof module !== 'undefined') module.exports = { jsonFields, fieldSchema, replaceField, lines, revisionChanged, formDocument, writeValue, writeFormValue, documentParts, iniSections, editIni, agentPaths, registerAgent, removeAgent };
   if (!root || !root.document) return;
   const document = root.document;
   const drafts = new Map(); // View cache; drafts are persisted by the application session.
@@ -174,6 +232,7 @@
   let catalog, selected, sequence = 0, view = 'source', busy = false, active = false;
   let body, list, editor, status, pageHost, activePage = null, deactivateEditor = null;
   const pageState = new Map();
+  let selectedAgent = '', agentForm = null;
   const element = (tag, text, className) => {
     const el = document.createElement(tag);
     if (text != null) el.textContent = text;
@@ -254,15 +313,87 @@
     const details=element('details',null,'project-settings-card'); details.open=pageState.get(id)||false;
     details.append(element('summary',title)); details.addEventListener('toggle',()=>pageState.set(id,details.open)); parent.append(details); return details;
   }
+  function renderAgentSelector(page) {
+    if (!page.agentCategory) return;
+    const toolbar = element('div', null, 'project-settings-agent-toolbar');
+    const label = element('label', 'Agent '), picker = element('select'); picker.setAttribute('aria-label', 'Agent');
+    const all = element('option', 'All agents'); all.value = ''; picker.append(all);
+    for (const agent of catalog.agents || []) { const option = element('option', `${agent.title}${agent.custom ? ' · Custom' : ''}`); option.value = agent.id; picker.append(option); }
+    if (!(catalog.agents || []).some(a => a.id === selectedAgent)) selectedAgent = '';
+    picker.value = selectedAgent; picker.addEventListener('change', () => { selectedAgent = picker.value; renderPage(page); }); label.append(picker); toolbar.append(label);
+    toolbar.append(button('Add custom agent', () => openAgentForm()));
+    const profile = (catalog.agents || []).find(a => a.id === selectedAgent);
+    if (profile?.custom) toolbar.append(button('Edit custom agent', () => openAgentForm(profile)));
+    pageHost.append(toolbar);
+    if (agentForm?.workspace === catalog.workspaceId) pageHost.append(button('Resume custom agent form', () => openAgentForm(agentForm.profile)));
+  }
+  async function openAgentForm(profile = null) {
+    if (busy) return;
+    const workspace = catalog.workspaceId, ticket = ++sequence;
+    try {
+      const path = 'nextprob.settings.json', identity = catalog.workspacePath || workspace;
+      await draftWrites;
+      const cached = drafts.get(key(identity, path)), retained = await root.settings.getDraft(workspace, path);
+      if (dirty(cached) || cached?.conflict || (retained && retained.dirty !== false)) throw new Error('Save or discard the nextprob.settings.json draft in Customize settings panel before changing agents.');
+      const snapshot = await root.settings.read(workspace, path);
+      if (ticket !== sequence || catalog.workspaceId !== workspace) return;
+      if ((snapshot.diagnostics || []).length || catalog.diagnostics?.some(d => d.source === path)) throw new Error('Repair nextprob.settings.json in Customize settings panel before changing agents.');
+      const registry = snapshot.exists ? JSON.parse(snapshot.text) : { version: 1, definitions: [] };
+      if (!Array.isArray(registry.definitions) || (registry.agents !== undefined && !Array.isArray(registry.agents))) throw new Error('Repair nextprob.settings.json before changing agents.');
+      if (!agentForm || agentForm.workspace !== workspace || agentForm.profile?.id !== profile?.id) {
+        const values = { title: profile?.title || '' };
+        for (const category of agentCategories) values[category] = (profile?.[category] || []).flatMap(id => { const def = catalog.definitions.find(d => d.id === id); return [...(def?.match.paths || []), ...(def?.match.directories || [])]; }).join('\n');
+        agentForm = { workspace, profile, values };
+      }
+      selected = null; deactivateEditor = null; editor = pageHost; pageHost.replaceChildren();
+      pageHost.append(element('h3', profile ? 'Edit custom agent' : 'Add custom agent'), element('p', 'Register project-relative paths, one per line. Agent files are created only when you explicitly save them. Global home-directory files are outside this project.', 'project-settings-description'));
+      const form = element('form', null, 'project-settings-agent-form');
+      const fields = [['title', 'Agent name'], ['instructions', 'Instruction files'], ['skills', 'Skill directories (containing skill folders with SKILL.md)'], ['settings', 'Settings files'], ['resources', 'Other resource directories']];
+      for (const [name, title] of fields) {
+        const label = element('label', title), input = element(name === 'title' ? 'input' : 'textarea'); input.value = agentForm.values[name]; input.setAttribute('aria-label', title);
+        if (name === 'title') { input.required = true; input.maxLength = 100; }
+        input.addEventListener('input', () => { agentForm.values[name] = input.value; }); label.append(input); form.append(label);
+      }
+      const errorHost = element('p', '', 'project-settings-error'); errorHost.setAttribute('role', 'alert');
+      const actions = element('div', null, 'project-settings-toolbar');
+      const submit = button(profile ? 'Save agent' : 'Add agent', () => {}); submit.type = 'submit';
+      actions.append(submit, button('Cancel', () => { agentForm = null; renderPage(activePage); }));
+      form.append(errorHost, actions); pageHost.append(form); message('Custom agents are stored in nextprob.settings.json.');
+      async function commit(remove = false) {
+        if (busy) return;
+        try {
+          if (!remove && !form.reportValidity()) return;
+          const next = remove ? removeAgent(registry, profile.id) : registerAgent(registry, agentForm.values, profile?.id, [...(catalog.agents || []).map(a => a.id), ...catalog.definitions.map(d => d.id)], catalog.definitions);
+          busy = true; form.querySelectorAll('button').forEach(b => { b.disabled = true; });
+          await draftWrites;
+          const latestDraft = drafts.get(key(identity, path)), latestRetained = await root.settings.getDraft(workspace, path);
+          if (dirty(latestDraft) || latestDraft?.conflict || (latestRetained && latestRetained.dirty !== false)) throw new Error('A registry draft exists. Save or discard it in Customize settings panel before changing agents.');
+          await root.settings.save(workspace, path, JSON.stringify(next, null, 2) + '\n', snapshot.revision);
+          drafts.delete(key(identity, path)); agentForm = null;
+          selectedAgent = remove ? '' : next.agents.at(-1).id;
+          busy = false; await refresh();
+        } catch (error) { errorHost.textContent = error.message || String(error); }
+        finally { busy = false; form.querySelectorAll('button').forEach(b => { b.disabled = false; }); }
+      }
+      form.addEventListener('submit', event => { event.preventDefault(); commit(); });
+      if (profile) {
+        const removal = element('details', null, 'project-settings-card'); removal.append(element('summary', 'Remove custom agent'), element('p', 'Removes this registration and its generated definitions. Your agent files remain in the project.', 'project-settings-description'), button('Remove registration', () => commit(true))); form.append(removal);
+      }
+    } catch (error) { if (ticket === sequence) message(error.message || String(error), true); }
+  }
   function renderPage(page) {
     if (!page || busy) return;
     sequence++; activePage=page; selected=null; deactivateEditor=null; editor=pageHost; pageHost.replaceChildren(); renderList();
     pageHost.append(element('h3',page.title)); const introduction=page.description || (page.sections.length===1 ? catalog.definitions.find(d=>d.id===page.sections[0].definitions[0])?.description : ''); if (introduction) pageHost.append(element('p',introduction,'project-settings-description'));
-    let initial;
+    renderAgentSelector(page);
+    let initial; const shownPaths = new Set();
     for (const [index,section] of page.sections.entries()) {
+      const agent = catalog.agents?.find(a => a.id === selectedAgent);
+      const ids = section.definitions.filter(id => !page.agentCategory || !agent || (agent[page.agentCategory] || []).includes(id));
+      if (page.agentCategory && !ids.length) continue;
       let parent; if(section.title===page.title&&!section.collapsed){parent=element('section',null,'project-settings-page-section');pageHost.append(parent);}else parent=pageDisclosure(pageHost,section.title,`${page.id}:${index}`,section.collapsed);
       if (section.description) parent.append(element('p',section.description,'project-settings-description'));
-      const resources=catalog.resources.filter(r=>section.definitions.includes(r.definitionId));
+      const resources=catalog.resources.filter(r=>ids.includes(r.definitionId)).filter(r => { const identity = `${r.kind}:${r.path}`; if (shownPaths.has(identity)) return false; shownPaths.add(identity); return true; });
       if (section.view === 'packages') { renderPackages(parent,resources.filter(r=>r.kind==='package'),section.emptyMessage); continue; }
       if (section.view === 'browser') {
         const roots=resources.filter(r=>r.kind==='folder' && (definition(r).match.directories||[]).includes(r.path));
@@ -284,7 +415,8 @@
           const head=element('div',null,'project-settings-document-heading'); head.append(element('span',location));
           head.append(element('small',r.exists ? 'Configured' : def.ui?.emptyMessage||'No custom configuration.'));
           head.append(button(r.exists ? 'Open' : def.ui?.editor==='document' ? 'Add instructions' : 'Configure',()=>select(r,false,holder,mount)));
-          holder.append(head); if (multiple) holder.append(element('code',r.path));
+          holder.append(head); holder.append(element('code',r.path));
+          if (page.agentCategory) { const owners=(catalog.agents||[]).filter(a=>(a[page.agentCategory]||[]).includes(r.definitionId)); if (owners.length) holder.append(element('small',`Used by: ${owners.map(a=>a.title).join(', ')}`,'project-settings-agent-origin')); }
         };
         mount();
         if (!initial && !section.collapsed && section.view==='resource') initial=()=>select(r,false,holder,mount);
@@ -324,7 +456,8 @@
       const pkg=copies[0],card=element('article',null,'project-settings-package');
       card.append(element('h4',pkg.name),element('p',pkg.description||'Project instruction package.','project-settings-description'));
       const origins=[...new Set(copies.map(c=>c.status))]; card.append(element('small',origins.length===1 ? ({managed:'App-managed',modified:'Modified copy',custom:'Custom'}[origins[0]]||'Custom') : 'Mixed origins'));
-      card.append(element('p',`Available to: ${copies.map(c=>definition(c).title).join(', ')}`,'project-settings-description'));
+      const consumers = (catalog.agents || []).filter(agent => (agent.skills || []).some(id => copies.some(c => c.definitionId === id))).map(agent => agent.title);
+      card.append(element('p',`Available to: ${[...new Set(consumers.length ? consumers : copies.map(c=>definition(c).title))].join(', ')}`,'project-settings-description'));
       const details=element('details');details.append(element('summary','View details'));card.append(details);
       const tabs=element('div',null,'project-settings-toolbar'), content=element('div');details.append(tabs,content);
       const openFile=(resource)=>{
@@ -374,6 +507,7 @@
     const isForm = view !== 'source' && ((format === 'json' && def.ui?.layout) || def.ui?.editor);
     if(!activePage||selected.browsed) editor.append(element('h3', selected.browsed ? selected.path.split('/').at(-1) : def.title || selected.path));
     if (!isForm) editor.append(element('code', selected.path));
+    if (['toml', 'jsonc'].includes(format)) editor.append(element('p', 'Source editor · comments and unknown options are preserved. Syntax is not validated here.', 'project-settings-notice'));
     if (def.description && !activePage) editor.append(element('p', def.description, 'project-settings-description'));
     const managed = d.snapshot.managedSections || def.managedSections || [];
     for (const section of (view !== 'source' && ['document','rules'].includes(def.ui?.editor) ? [] : managed)) editor.append(element('p', `${section.label || 'Managed section'} is maintained by the application. Changes to its protected content cannot be saved.`, 'project-settings-notice'));
@@ -740,7 +874,7 @@
       const incoming = await root.settings.list(); if (ticket !== sequence) return;
       const workspaceChanged = catalog && catalog.workspaceId !== incoming.workspaceId;
       catalog = incoming;
-      if (workspaceChanged) { selected = null; activePage = null; deactivateEditor = null; editor = pageHost; }
+      if (workspaceChanged) { selectedAgent = ''; agentForm = null; selected = null; activePage = null; deactivateEditor = null; editor = pageHost; }
       renderList();
       if (selected) { const resource = catalog.resources.find(r => r.path === selected.path) || (selected.browsed && catalog.definitions.some(d => d.id === selected.definitionId) ? selected : null); if (resource) await select(resource, true); else { selected = null; editor.replaceChildren(element('p', 'This file is no longer in the settings catalog. Its draft is retained.')); } }
       else if (catalog.pages?.length) {

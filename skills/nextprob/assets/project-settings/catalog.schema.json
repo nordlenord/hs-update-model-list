@@ -35,6 +35,13 @@
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
       "description": "Minimum compatible application version for this catalog."
+    },
+    "agents": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/agent"
+      }
     }
   },
   "$defs": {
@@ -101,7 +108,9 @@
             "markdown",
             "json",
             "line-rules",
-            "ini"
+            "ini",
+            "toml",
+            "jsonc"
           ]
         },
         "views": {
@@ -577,7 +586,7 @@
         },
         "sections": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 0,
           "maxItems": 100,
           "items": {
             "type": "object",
@@ -623,8 +632,32 @@
               }
             }
           }
+        },
+        "agentCategory": {
+          "enum": [
+            "instructions",
+            "skills",
+            "settings",
+            "resources"
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "agentCategory"
+            ]
+          },
+          "else": {
+            "properties": {
+              "sections": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
     },
     "discovery": {
       "type": "object",
@@ -693,6 +726,61 @@
                 "pattern": "^(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*\\u0000).*[^/]$"
               }
             }
+          }
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,63}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "instructions": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "skills": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "settings": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          }
+        },
+        "resources": {
+          "type": "array",
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
           }
         }
       }

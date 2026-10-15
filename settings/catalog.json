@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "revision": 2,
-  "minAppVersion": "0.3.4",
+  "revision": 3,
+  "minAppVersion": "0.3.5",
   "definitions": [
     {
       "id": "project-display",
@@ -634,9 +634,9 @@
     },
     {
       "id": "agent-instructions",
-      "title": "Agent instructions",
+      "title": "Shared project instructions",
       "group": "Agent Instructions & Skills",
-      "description": "Write guidance for assistants working in this project. Application instructions are kept separately.",
+      "description": "AGENTS.md is shared by Codex, OpenCode, and Pi. Agent-specific precedence and fallback rules still apply.",
       "match": {
         "paths": [
           "AGENTS.md"
@@ -670,13 +670,12 @@
     },
     {
       "id": "claude-instructions",
-      "title": "Claude instructions",
+      "title": "CLAUDE.md instructions",
       "group": "Agent Instructions & Skills",
-      "description": "Write guidance for assistants working in this project. Application instructions are kept separately.",
+      "description": "Native Claude project instructions. OpenCode and Pi can use this file as a fallback; each tool applies its own discovery and precedence rules.",
       "match": {
         "paths": [
-          "CLAUDE.md",
-          ".claude/CLAUDE.md"
+          "CLAUDE.md"
         ]
       },
       "format": "markdown",
@@ -707,13 +706,12 @@
     },
     {
       "id": "gemini-instructions",
-      "title": "Gemini instructions",
+      "title": "Gemini CLI",
       "group": "Agent Instructions & Skills",
       "description": "Write guidance for assistants working in this project. Application instructions are kept separately.",
       "match": {
         "paths": [
-          "GEMINI.md",
-          ".gemini/GEMINI.md"
+          "GEMINI.md"
         ]
       },
       "format": "markdown",
@@ -948,10 +946,8 @@
           },
           {
             "patterns": [
-              "CLAUDE.md",
-              "GEMINI.md",
-              "settings.local.json",
-              "settings.json"
+              "settings.json",
+              "GEMINI.md"
             ],
             "reason": "Known documents and tool settings have dedicated pages."
           }
@@ -1172,7 +1168,7 @@
     },
     {
       "id": "agents-skills",
-      "title": "Codex / compatible agents",
+      "title": "Shared agent skills",
       "group": "AI assistance",
       "description": "",
       "match": {
@@ -1241,7 +1237,7 @@
     },
     {
       "id": "gemini-skills",
-      "title": "Gemini",
+      "title": "Gemini CLI",
       "group": "AI assistance",
       "description": "",
       "match": {
@@ -1310,7 +1306,7 @@
     },
     {
       "id": "claude-settings",
-      "title": "Claude settings",
+      "title": "Claude",
       "group": "AI assistance",
       "description": "Advanced configuration interpreted by this tool. Existing values are preserved; no tool behavior is inferred.",
       "match": {
@@ -1335,13 +1331,215 @@
     },
     {
       "id": "gemini-settings",
-      "title": "Gemini settings",
+      "title": "Gemini CLI",
       "group": "AI assistance",
       "description": "Advanced configuration interpreted by this tool. Existing values are preserved; no tool behavior is inferred.",
       "match": {
         "paths": [
-          ".gemini/settings.json",
-          ".gemini/settings.local.json"
+          ".gemini/settings.json"
+        ]
+      },
+      "format": "jsonc",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": "{}\n"
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "emptyMessage": "No custom tool configuration. Open an editor only if you want to add it."
+      }
+    },
+    {
+      "id": "agent-override-instructions",
+      "title": "Override instructions",
+      "group": "Agent Instructions & Skills",
+      "description": "Codex and Pi prefer this file over AGENTS.md in the same directory. OpenCode does not document this filename.",
+      "match": {
+        "paths": [
+          "AGENTS.override.md"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "managedSections": [
+        {
+          "start": "<!-- APP-DEFAULT (do not edit — this section is auto-updated) -->",
+          "end": "<!-- /APP-DEFAULT -->",
+          "label": "NextProb default instructions (automatically updated)"
+        }
+      ],
+      "ui": {
+        "advanced": true,
+        "saveLabel": "Save changes",
+        "createLabel": "Add instructions",
+        "defaultView": "preview",
+        "editor": "document",
+        "emptyMessage": "No custom instructions."
+      }
+    },
+    {
+      "id": "pi-system-instructions",
+      "title": "Pi system prompt",
+      "group": "Agent Instructions & Skills",
+      "description": "Replaces Pi’s default system prompt for this project. This is different from ordinary project guidance.",
+      "match": {
+        "paths": [
+          ".pi/SYSTEM.md"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "managedSections": [
+        {
+          "start": "<!-- APP-DEFAULT (do not edit — this section is auto-updated) -->",
+          "end": "<!-- /APP-DEFAULT -->",
+          "label": "NextProb default instructions (automatically updated)"
+        }
+      ],
+      "ui": {
+        "advanced": true,
+        "saveLabel": "Save changes",
+        "createLabel": "Add instructions",
+        "defaultView": "preview",
+        "editor": "document",
+        "emptyMessage": "No custom instructions."
+      }
+    },
+    {
+      "id": "pi-append-instructions",
+      "title": "Pi additional system instructions",
+      "group": "Agent Instructions & Skills",
+      "description": "Appends instructions to Pi’s system prompt for this project.",
+      "match": {
+        "paths": [
+          ".pi/APPEND_SYSTEM.md"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "managedSections": [
+        {
+          "start": "<!-- APP-DEFAULT (do not edit — this section is auto-updated) -->",
+          "end": "<!-- /APP-DEFAULT -->",
+          "label": "NextProb default instructions (automatically updated)"
+        }
+      ],
+      "ui": {
+        "advanced": true,
+        "saveLabel": "Save changes",
+        "createLabel": "Add instructions",
+        "defaultView": "preview",
+        "editor": "document",
+        "emptyMessage": "No custom instructions."
+      }
+    },
+    {
+      "id": "codex-settings",
+      "title": "Codex",
+      "group": "AI assistance",
+      "description": "Advanced configuration interpreted by this tool. Existing values are preserved; no tool behavior is inferred.",
+      "match": {
+        "paths": [
+          ".codex/config.toml"
+        ]
+      },
+      "format": "toml",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "emptyMessage": "No custom tool configuration. Open an editor only if you want to add it."
+      }
+    },
+    {
+      "id": "opencode-settings",
+      "title": "OpenCode",
+      "group": "AI assistance",
+      "description": "Advanced configuration interpreted by this tool. Existing values are preserved; no tool behavior is inferred.",
+      "match": {
+        "paths": [
+          "opencode.json",
+          "opencode.jsonc"
+        ]
+      },
+      "format": "jsonc",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": "{}\n"
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "emptyMessage": "No custom tool configuration. Open an editor only if you want to add it."
+      }
+    },
+    {
+      "id": "opencode-tui-settings",
+      "title": "OpenCode terminal interface",
+      "group": "AI assistance",
+      "description": "Advanced configuration interpreted by this tool. Existing values are preserved; no tool behavior is inferred.",
+      "match": {
+        "paths": [
+          "tui.json",
+          "tui.jsonc"
+        ]
+      },
+      "format": "jsonc",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": "{}\n"
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "emptyMessage": "No custom tool configuration. Open an editor only if you want to add it."
+      }
+    },
+    {
+      "id": "pi-settings",
+      "title": "Pi",
+      "group": "AI assistance",
+      "description": "Advanced configuration interpreted by this tool. Existing values are preserved; no tool behavior is inferred.",
+      "match": {
+        "paths": [
+          ".pi/settings.json"
         ]
       },
       "format": "json",
@@ -1356,6 +1554,537 @@
         "saveLabel": "Save changes",
         "createLabel": "Create configuration",
         "emptyMessage": "No custom tool configuration. Open an editor only if you want to add it."
+      }
+    },
+    {
+      "id": "pi-mcp-settings",
+      "title": "Pi MCP servers",
+      "group": "AI assistance",
+      "description": "Advanced configuration interpreted by this tool. Existing values are preserved; no tool behavior is inferred.",
+      "match": {
+        "paths": [
+          ".pi/mcp.json"
+        ]
+      },
+      "format": "json",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": "{}\n"
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "emptyMessage": "No custom tool configuration. Open an editor only if you want to add it."
+      }
+    },
+    {
+      "id": "claude-mcp-settings",
+      "title": "Claude MCP servers",
+      "group": "AI assistance",
+      "description": "Advanced configuration interpreted by this tool. Existing values are preserved; no tool behavior is inferred.",
+      "match": {
+        "paths": [
+          ".mcp.json"
+        ]
+      },
+      "format": "json",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": "{}\n"
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "emptyMessage": "No custom tool configuration. Open an editor only if you want to add it."
+      }
+    },
+    {
+      "id": "opencode-skills",
+      "title": "OpenCode",
+      "group": "AI assistance",
+      "description": "",
+      "match": {
+        "directories": [
+          ".opencode/skills"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "defaultView": "preview",
+        "editor": "document"
+      },
+      "discovery": {
+        "mode": "packages",
+        "packageFile": "SKILL.md",
+        "exclude": [
+          {
+            "patterns": [
+              "**/.env",
+              "**/.env.*",
+              "**/*credential*",
+              "**/*secret*",
+              "**/*token*",
+              "**/auth.json",
+              "**/*.pem",
+              "**/*.key"
+            ],
+            "reason": "Credentials are excluded from general settings discovery."
+          },
+          {
+            "patterns": [
+              "**/cache/",
+              "**/logs/",
+              "**/history/",
+              "**/sessions/",
+              "**/*.log",
+              "**/*.db",
+              "**/*.sqlite*",
+              "**/node_modules/",
+              ".git/"
+            ],
+            "reason": "Caches, logs, and internal state are not settings."
+          }
+        ],
+        "packageViews": [
+          {
+            "title": "Documentation",
+            "path": "references"
+          },
+          {
+            "title": "Examples",
+            "path": "assets/settings-demo"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pi-skills",
+      "title": "Pi",
+      "group": "AI assistance",
+      "description": "",
+      "match": {
+        "directories": [
+          ".pi/skills"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "ui": {
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration",
+        "defaultView": "preview",
+        "editor": "document"
+      },
+      "discovery": {
+        "mode": "packages",
+        "packageFile": "SKILL.md",
+        "exclude": [
+          {
+            "patterns": [
+              "**/.env",
+              "**/.env.*",
+              "**/*credential*",
+              "**/*secret*",
+              "**/*token*",
+              "**/auth.json",
+              "**/*.pem",
+              "**/*.key"
+            ],
+            "reason": "Credentials are excluded from general settings discovery."
+          },
+          {
+            "patterns": [
+              "**/cache/",
+              "**/logs/",
+              "**/history/",
+              "**/sessions/",
+              "**/*.log",
+              "**/*.db",
+              "**/*.sqlite*",
+              "**/node_modules/",
+              ".git/"
+            ],
+            "reason": "Caches, logs, and internal state are not settings."
+          }
+        ],
+        "packageViews": [
+          {
+            "title": "Documentation",
+            "path": "references"
+          },
+          {
+            "title": "Examples",
+            "path": "assets/settings-demo"
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-resources",
+      "title": "Codex configuration folder",
+      "group": "Agent Instructions & Skills",
+      "description": "Browse project-scoped configuration, instructions, and skills. Unrecognized text resources are available in the source editor.",
+      "match": {
+        "directories": [
+          ".codex"
+        ]
+      },
+      "format": "text",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "ui": {
+        "advanced": true,
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration"
+      },
+      "discovery": {
+        "mode": "browser",
+        "exclude": [
+          {
+            "patterns": [
+              "**/.env",
+              "**/.env.*",
+              "**/*credential*",
+              "**/*secret*",
+              "**/*token*",
+              "**/auth.json",
+              "**/*.pem",
+              "**/*.key"
+            ],
+            "reason": "Credentials are excluded from general settings discovery."
+          },
+          {
+            "patterns": [
+              "**/cache/",
+              "**/logs/",
+              "**/history/",
+              "**/sessions/",
+              "**/*.log",
+              "**/*.db",
+              "**/*.sqlite*",
+              "**/node_modules/",
+              ".git/"
+            ],
+            "reason": "Caches, logs, and internal state are not settings."
+          },
+          {
+            "patterns": [
+              "skills/"
+            ],
+            "reason": "Skill packages are presented in Skills."
+          },
+          {
+            "patterns": [
+              "config.toml"
+            ],
+            "reason": "Known documents and tool settings have dedicated pages."
+          }
+        ]
+      }
+    },
+    {
+      "id": "opencode-resources",
+      "title": "OpenCode configuration folder",
+      "group": "Agent Instructions & Skills",
+      "description": "Browse project-scoped configuration, instructions, and skills. Unrecognized text resources are available in the source editor.",
+      "match": {
+        "directories": [
+          ".opencode"
+        ]
+      },
+      "format": "text",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "ui": {
+        "advanced": true,
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration"
+      },
+      "discovery": {
+        "mode": "browser",
+        "exclude": [
+          {
+            "patterns": [
+              "**/.env",
+              "**/.env.*",
+              "**/*credential*",
+              "**/*secret*",
+              "**/*token*",
+              "**/auth.json",
+              "**/*.pem",
+              "**/*.key"
+            ],
+            "reason": "Credentials are excluded from general settings discovery."
+          },
+          {
+            "patterns": [
+              "**/cache/",
+              "**/logs/",
+              "**/history/",
+              "**/sessions/",
+              "**/*.log",
+              "**/*.db",
+              "**/*.sqlite*",
+              "**/node_modules/",
+              ".git/"
+            ],
+            "reason": "Caches, logs, and internal state are not settings."
+          },
+          {
+            "patterns": [
+              "skills/"
+            ],
+            "reason": "Skill packages are presented in Skills."
+          }
+        ]
+      }
+    },
+    {
+      "id": "pi-resources",
+      "title": "Pi configuration folder",
+      "group": "Agent Instructions & Skills",
+      "description": "Browse project-scoped configuration, instructions, and skills. Unrecognized text resources are available in the source editor.",
+      "match": {
+        "directories": [
+          ".pi"
+        ]
+      },
+      "format": "text",
+      "views": [
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "ui": {
+        "advanced": true,
+        "saveLabel": "Save changes",
+        "createLabel": "Create configuration"
+      },
+      "discovery": {
+        "mode": "browser",
+        "exclude": [
+          {
+            "patterns": [
+              "**/.env",
+              "**/.env.*",
+              "**/*credential*",
+              "**/*secret*",
+              "**/*token*",
+              "**/auth.json",
+              "**/*.pem",
+              "**/*.key"
+            ],
+            "reason": "Credentials are excluded from general settings discovery."
+          },
+          {
+            "patterns": [
+              "**/cache/",
+              "**/logs/",
+              "**/history/",
+              "**/sessions/",
+              "**/*.log",
+              "**/*.db",
+              "**/*.sqlite*",
+              "**/node_modules/",
+              ".git/"
+            ],
+            "reason": "Caches, logs, and internal state are not settings."
+          },
+          {
+            "patterns": [
+              "skills/"
+            ],
+            "reason": "Skill packages are presented in Skills."
+          },
+          {
+            "patterns": [
+              "settings.json",
+              "mcp.json",
+              "SYSTEM.md",
+              "APPEND_SYSTEM.md"
+            ],
+            "reason": "Known documents and tool settings have dedicated pages."
+          }
+        ]
+      }
+    },
+    {
+      "id": "gemini-legacy-instructions",
+      "title": "Legacy Gemini instructions",
+      "group": "Agent Instructions & Skills",
+      "description": "Earlier NextProb versions created this file. It is retained for compatibility; when root GEMINI.md is absent, project initialization copies this guidance there without deleting the legacy document.",
+      "match": {
+        "paths": [
+          ".gemini/GEMINI.md"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "managedSections": [
+        {
+          "start": "<!-- APP-DEFAULT (do not edit — this section is auto-updated) -->",
+          "end": "<!-- /APP-DEFAULT -->",
+          "label": "NextProb default instructions (automatically updated)"
+        }
+      ],
+      "ui": {
+        "advanced": true,
+        "saveLabel": "Save changes",
+        "createLabel": "Add instructions",
+        "defaultView": "preview",
+        "editor": "document",
+        "emptyMessage": "No custom instructions."
+      }
+    },
+    {
+      "id": "claude-folder-instructions",
+      "title": "Claude tool-folder instructions",
+      "group": "Agent Instructions & Skills",
+      "description": "Claude also reads instructions from its project configuration folder.",
+      "match": {
+        "paths": [
+          ".claude/CLAUDE.md"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "managedSections": [
+        {
+          "start": "<!-- APP-DEFAULT (do not edit — this section is auto-updated) -->",
+          "end": "<!-- /APP-DEFAULT -->",
+          "label": "NextProb default instructions (automatically updated)"
+        }
+      ],
+      "ui": {
+        "advanced": true,
+        "order": 105,
+        "saveLabel": "Save changes",
+        "createLabel": "Add instructions",
+        "defaultView": "preview",
+        "editor": "document",
+        "emptyMessage": "No custom instructions."
+      }
+    },
+    {
+      "id": "claude-local-instructions",
+      "title": "Claude local instructions",
+      "group": "Agent Instructions & Skills",
+      "description": "Personal Claude project instructions; typically excluded from version control.",
+      "match": {
+        "paths": [
+          "CLAUDE.local.md"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "managedSections": [
+        {
+          "start": "<!-- APP-DEFAULT (do not edit — this section is auto-updated) -->",
+          "end": "<!-- /APP-DEFAULT -->",
+          "label": "NextProb default instructions (automatically updated)"
+        }
+      ],
+      "ui": {
+        "advanced": true,
+        "order": 105,
+        "saveLabel": "Save changes",
+        "createLabel": "Add instructions",
+        "defaultView": "preview",
+        "editor": "document",
+        "emptyMessage": "No custom instructions."
+      }
+    },
+    {
+      "id": "pi-uppercase-instructions",
+      "title": "Pi uppercase instruction aliases",
+      "group": "Agent Instructions & Skills",
+      "description": "Pi recognizes these uppercase context aliases. Its first matching context filename per directory wins; these are alternatives, not additional concatenated guidance.",
+      "match": {
+        "paths": [
+          "AGENTS.MD",
+          "CLAUDE.MD"
+        ]
+      },
+      "format": "markdown",
+      "views": [
+        "preview",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": ""
+      },
+      "managedSections": [
+        {
+          "start": "<!-- APP-DEFAULT (do not edit — this section is auto-updated) -->",
+          "end": "<!-- /APP-DEFAULT -->",
+          "label": "NextProb default instructions (automatically updated)"
+        }
+      ],
+      "ui": {
+        "advanced": true,
+        "order": 105,
+        "saveLabel": "Save changes",
+        "createLabel": "Add instructions",
+        "defaultView": "preview",
+        "editor": "document",
+        "emptyMessage": "No custom instructions."
       }
     }
   ],
@@ -1407,14 +2136,7 @@
       "group": "AI assistance",
       "sections": [
         {
-          "title": "Shared project instructions",
-          "definitions": [
-            "agent-instructions"
-          ],
-          "view": "documents"
-        },
-        {
-          "title": "Claude",
+          "title": "CLAUDE.md instructions",
           "definitions": [
             "claude-instructions"
           ],
@@ -1422,16 +2144,72 @@
           "collapsed": true
         },
         {
-          "title": "Gemini",
+          "title": "Claude tool-folder instructions",
+          "definitions": [
+            "claude-folder-instructions"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Claude local instructions",
+          "definitions": [
+            "claude-local-instructions"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Shared project instructions",
+          "definitions": [
+            "agent-instructions"
+          ],
+          "view": "documents"
+        },
+        {
+          "title": "Override instructions",
+          "definitions": [
+            "agent-override-instructions"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Gemini CLI",
           "definitions": [
             "gemini-instructions"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Pi system prompt",
+          "definitions": [
+            "pi-system-instructions"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Pi additional system instructions",
+          "definitions": [
+            "pi-append-instructions"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Pi uppercase instruction aliases",
+          "definitions": [
+            "pi-uppercase-instructions"
           ],
           "view": "documents",
           "collapsed": true
         }
       ],
       "order": 20,
-      "description": "Guide AI assistants working in this project."
+      "description": "Guide AI assistants working in this project.",
+      "agentCategory": "instructions"
     },
     {
       "id": "skills",
@@ -1441,16 +2219,19 @@
         {
           "title": "Available skills",
           "definitions": [
-            "agents-skills",
             "claude-skills",
-            "gemini-skills"
+            "agents-skills",
+            "gemini-skills",
+            "opencode-skills",
+            "pi-skills"
           ],
           "view": "packages",
           "emptyMessage": "No skill packages are installed in this project."
         }
       ],
       "order": 30,
-      "description": "Reusable instructions available to your AI assistants."
+      "description": "Reusable instructions available to your AI assistants.",
+      "agentCategory": "skills"
     },
     {
       "id": "tool-settings",
@@ -1466,16 +2247,65 @@
           "collapsed": true
         },
         {
-          "title": "Gemini",
+          "title": "Claude MCP servers",
+          "definitions": [
+            "claude-mcp-settings"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Codex",
+          "definitions": [
+            "codex-settings"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Gemini CLI",
           "definitions": [
             "gemini-settings"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "OpenCode",
+          "definitions": [
+            "opencode-settings"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "OpenCode terminal interface",
+          "definitions": [
+            "opencode-tui-settings"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Pi",
+          "definitions": [
+            "pi-settings"
+          ],
+          "view": "documents",
+          "collapsed": true
+        },
+        {
+          "title": "Pi MCP servers",
+          "definitions": [
+            "pi-mcp-settings"
           ],
           "view": "documents",
           "collapsed": true
         }
       ],
       "order": 40,
-      "description": "Tool-specific configuration. Unrecognized options remain available in the source editor."
+      "description": "Tool-specific configuration. Unrecognized options remain available in the source editor.",
+      "agentCategory": "settings"
     },
     {
       "id": "editor-conventions",
@@ -1515,18 +2345,168 @@
       "group": "Advanced",
       "sections": [
         {
-          "title": "Project tool folders",
+          "title": "Claude configuration folder",
           "definitions": [
-            "claude-resources",
-            "agent-resources",
+            "claude-resources"
+          ],
+          "view": "browser"
+        },
+        {
+          "title": "Codex configuration folder",
+          "definitions": [
+            "codex-resources"
+          ],
+          "view": "browser"
+        },
+        {
+          "title": "Agent configuration folder",
+          "definitions": [
+            "agent-resources"
+          ],
+          "view": "browser"
+        },
+        {
+          "title": "Gemini configuration folder",
+          "definitions": [
             "gemini-resources"
+          ],
+          "view": "browser"
+        },
+        {
+          "title": "OpenCode configuration folder",
+          "definitions": [
+            "opencode-resources"
+          ],
+          "view": "browser"
+        },
+        {
+          "title": "Pi configuration folder",
+          "definitions": [
+            "pi-resources"
           ],
           "view": "browser"
         }
       ],
       "order": 120,
       "advanced": true,
-      "description": "Browse additional configuration only when needed. Skill packages have their own details view."
+      "description": "Browse additional configuration only when needed. Skill packages have their own details view.",
+      "agentCategory": "resources"
+    },
+    {
+      "id": "legacy-agent-files",
+      "title": "Legacy agent files",
+      "group": "Advanced",
+      "order": 130,
+      "advanced": true,
+      "sections": [
+        {
+          "title": "Legacy Gemini instructions",
+          "definitions": [
+            "gemini-legacy-instructions"
+          ],
+          "view": "documents",
+          "description": "Earlier NextProb versions created this file. It is retained for compatibility; when root GEMINI.md is absent, project initialization copies this guidance there without deleting the legacy document."
+        }
+      ]
+    }
+  ],
+  "agents": [
+    {
+      "id": "claude",
+      "title": "Claude",
+      "instructions": [
+        "claude-instructions",
+        "claude-folder-instructions",
+        "claude-local-instructions"
+      ],
+      "skills": [
+        "claude-skills"
+      ],
+      "settings": [
+        "claude-settings",
+        "claude-mcp-settings"
+      ],
+      "resources": [
+        "claude-resources"
+      ]
+    },
+    {
+      "id": "codex",
+      "title": "Codex",
+      "instructions": [
+        "agent-instructions",
+        "agent-override-instructions"
+      ],
+      "skills": [
+        "agents-skills"
+      ],
+      "settings": [
+        "codex-settings"
+      ],
+      "resources": [
+        "codex-resources",
+        "agent-resources"
+      ]
+    },
+    {
+      "id": "gemini",
+      "title": "Gemini CLI",
+      "instructions": [
+        "gemini-instructions"
+      ],
+      "skills": [
+        "agents-skills",
+        "gemini-skills"
+      ],
+      "settings": [
+        "gemini-settings"
+      ],
+      "resources": [
+        "gemini-resources"
+      ]
+    },
+    {
+      "id": "opencode",
+      "title": "OpenCode",
+      "instructions": [
+        "agent-instructions",
+        "claude-instructions"
+      ],
+      "skills": [
+        "agents-skills",
+        "claude-skills",
+        "opencode-skills"
+      ],
+      "settings": [
+        "opencode-settings",
+        "opencode-tui-settings"
+      ],
+      "resources": [
+        "opencode-resources"
+      ]
+    },
+    {
+      "id": "pi",
+      "title": "Pi",
+      "instructions": [
+        "agent-instructions",
+        "agent-override-instructions",
+        "pi-system-instructions",
+        "pi-append-instructions",
+        "claude-instructions",
+        "pi-uppercase-instructions"
+      ],
+      "skills": [
+        "agents-skills",
+        "pi-skills"
+      ],
+      "settings": [
+        "pi-settings",
+        "pi-mcp-settings"
+      ],
+      "resources": [
+        "pi-resources"
+      ]
     }
   ]
 }

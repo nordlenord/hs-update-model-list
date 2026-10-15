@@ -11,9 +11,9 @@ NextProb 0.3.3+ separates navigation pages from file definitions. Use these defa
 | `.gitignore` | Same page, separate Git exclusions | Initially collapsed; never merge Git and sync semantics |
 | `AGENTS.md` | AI assistance → Instructions, shared guidance | Editor/preview; managed blocks collapsed and protected |
 | `CLAUDE.md`, `.claude/CLAUDE.md` | Instructions → Claude | One tool section, distinct project-root and tool-folder documents |
-| `GEMINI.md`, `.gemini/GEMINI.md` | Instructions → Gemini | Same treatment; retain both locations without inventing precedence |
+| `GEMINI.md` | Instructions → Gemini CLI | Native project-root context; old `.gemini/GEMINI.md` remains in Advanced → Legacy agent files |
 | `.agents/skills/*`, `.claude/skills/*`, `.gemini/skills/*` with `SKILL.md` | Skills, package cards | Combine identical inventories; keep modified copies distinct |
-| `.claude/settings.json`, `.claude/settings.local.json`, corresponding Gemini paths | Tool settings | Collapsed per tool; explicit source editor until a supported schema/form is provided |
+| `.claude/settings.json`, `.claude/settings.local.json`, `.gemini/settings.json` | Tool settings | Collapsed per tool; explicit source editor until a supported schema/form is provided |
 | `.editorconfig` | Advanced → Editor conventions | Generic INI editor: common conventions, collapsed per-file sections, unknown properties preserved |
 | `nextprob.settings.json` | Advanced → Customize settings panel | Registry form; layout/discovery/page authoring collapsed |
 | Other text in `.claude`, `.agents`, `.gemini`, including custom guidance | Advanced → Other configuration files | Lazy hierarchical browser, never a flat descendant list |
@@ -76,3 +76,13 @@ For a requested demo in a new/scratch project, copy the folder contents includin
 ## Replaceable HTML presentation
 
 These task pages describe the maintained default HTML renderer. A project can select a custom HTML note in the application host, retain its own navigation and controls, and use the same versioned settings bridge. Catalog pages and form layouts remain metadata rather than a restriction on custom HTML. Maintainers edit `settings/ui/` in the content repository; the installed skill's UI assets are generated reference copies. See [file-backed settings](project-settings.md#html-settings-interfaces).
+
+## Agent profiles (0.3.5+)
+
+The maintained catalog supplies `agents` alongside definitions and pages. Each profile has `id`, `title`, and optional `instructions`, `skills`, `settings`, and `resources` arrays of definition IDs. A page with `agentCategory` set to one of these category names derives its sections from the effective profiles, deduplicating shared definitions. The default interface filters these sections with an Agent selector. Static local page overrides without `agentCategory` keep their own layout.
+
+The Add custom agent form registers project-relative paths in `nextprob.settings.json`. Users can also author profiles directly there, including references to built-in definitions. Local profiles override matching IDs, just like definitions and pages. Removing a registration never deletes agent files. Invalid updates retain the last valid session configuration. Custom registration does not launch agents or imply that an agent consumes arbitrary registered files.
+
+Built-in profiles are Claude, Codex, Gemini CLI, OpenCode, and Pi. The content repository’s `settings/AGENT-PATHS.md` documents researched native paths, fallback rules, and official sources. Shared `AGENTS.md` and `.agents/skills` are single resources; compatibility differs by agent. Codex uses `.codex/config.toml`; OpenCode uses root `opencode.json` or `opencode.jsonc`; Pi uses `.pi/settings.json`. Gemini CLI has no documented `settings.local.json`.
+
+The `toml` and `jsonc` formats provide source editing with exact text preservation. They do not provide syntax validation or structured forms. Registration and opening pages never create the registered tool files.
