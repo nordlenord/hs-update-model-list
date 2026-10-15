@@ -38,6 +38,7 @@ A section has required `id`, `title`, `view`, and exactly one of `source` or `co
 | `source` | `"items"` or `"notes"` for a direct source section. |
 | `collection` | ID of an existing collection, including built-in `favorites`. |
 | `sort` | Optional supported sort that overrides collection sorting. |
+| `enabled` | Optional boolean, default `true`. Set `false` to hide a section while keeping its configuration (NextProb 0.3.2+). |
 | `hideWhenEmpty` | Optional boolean; if true, omit the section when it has no displayed entries. |
 | `hiddenFolders` | Optional exact project-relative directory paths, supported only for tree sections. |
 

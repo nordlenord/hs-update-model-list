@@ -170,6 +170,11 @@
             "minLength": 1,
             "pattern": "^(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*\u0000).*[^/]$"
           }
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show this section in the sidebar. Disabled sections keep their configuration."
         }
       },
       "allOf": [

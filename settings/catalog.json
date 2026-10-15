@@ -2,6 +2,358 @@
   "version": 1,
   "definitions": [
     {
+      "id": "project-display",
+      "title": "Sidebar",
+      "group": "Appearance",
+      "description": "Choose what appears in your sidebar and how it is organized.",
+      "match": {
+        "paths": [
+          "nextprob.config.json"
+        ]
+      },
+      "format": "json",
+      "views": [
+        "structured",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": "{\n  \"version\": 1\n}\n"
+      },
+      "schema": "project-config.schema.json",
+      "ui": {
+        "defaultView": "structured",
+        "order": 0,
+        "layout": [
+          {
+            "type": "group",
+            "title": "General",
+            "children": [
+              {
+                "type": "field",
+                "path": [
+                  "surfaces",
+                  "sidebar",
+                  "hideDotFolders"
+                ],
+                "title": "Hide files and folders starting with “.”",
+                "control": "toggle",
+                "default": true
+              }
+            ]
+          },
+          {
+            "type": "list",
+            "path": [
+              "surfaces",
+              "sidebar",
+              "sections"
+            ],
+            "title": "Sections",
+            "description": "Expand a section to change its name, layout, or sorting. Move sections to set their order.",
+            "default": [
+              {
+                "id": "favorites",
+                "title": "Favorites",
+                "view": "list",
+                "collection": "favorites",
+                "hideWhenEmpty": true
+              },
+              {
+                "id": "files",
+                "title": "Notes",
+                "view": "tree",
+                "source": "items",
+                "hiddenFolders": [
+                  ".claude",
+                  ".vscode",
+                  ".context",
+                  "_templates"
+                ]
+              }
+            ],
+            "itemTitle": [
+              "title"
+            ],
+            "keyField": "id",
+            "reorderable": true,
+            "removable": true,
+            "itemTemplate": {
+              "id": "section",
+              "title": "New section",
+              "view": "list",
+              "source": "notes"
+            },
+            "addLabel": "+ Add section",
+            "children": [
+              {
+                "type": "field",
+                "path": [
+                  "enabled"
+                ],
+                "title": "Show section",
+                "control": "toggle",
+                "default": true,
+                "summary": true
+              },
+              {
+                "type": "field",
+                "path": [
+                  "title"
+                ],
+                "title": "Section name"
+              },
+              {
+                "type": "field",
+                "path": [
+                  "view"
+                ],
+                "title": "Display as",
+                "control": "select",
+                "options": [
+                  {
+                    "value": "list",
+                    "label": "List"
+                  },
+                  {
+                    "value": "tree",
+                    "label": "Folder tree"
+                  }
+                ],
+                "clearOnChange": [
+                  [
+                    "hiddenFolders"
+                  ]
+                ]
+              },
+              {
+                "type": "field",
+                "path": [
+                  "sort"
+                ],
+                "title": "Sort by",
+                "control": "select",
+                "options": [
+                  {
+                    "value": "title",
+                    "label": "Title"
+                  },
+                  {
+                    "value": "name",
+                    "label": "Name"
+                  },
+                  {
+                    "value": "path",
+                    "label": "File path"
+                  },
+                  {
+                    "value": "modifiedAt",
+                    "label": "Last modified"
+                  },
+                  {
+                    "value": "favoriteOrder",
+                    "label": "My favorites order"
+                  }
+                ],
+                "optional": true,
+                "emptyLabel": "Use collection order / name"
+              },
+              {
+                "type": "group",
+                "title": "More options",
+                "children": [
+                  {
+                    "type": "field",
+                    "path": [
+                      "hideWhenEmpty"
+                    ],
+                    "title": "Hide when empty",
+                    "control": "toggle",
+                    "default": false
+                  },
+                  {
+                    "type": "field",
+                    "path": [
+                      "hiddenFolders"
+                    ],
+                    "title": "Excluded folders",
+                    "control": "lines",
+                    "visibleWhen": {
+                      "path": [
+                        "view"
+                      ],
+                      "equals": "tree"
+                    },
+                    "description": "One project-relative folder per line. Its contents are hidden in this section."
+                  },
+                  {
+                    "type": "group",
+                    "title": "Content selection",
+                    "children": [
+                      {
+                        "type": "field",
+                        "path": [
+                          "source"
+                        ],
+                        "title": "Include",
+                        "control": "select",
+                        "options": [
+                          {
+                            "value": "items",
+                            "label": "All files and notes"
+                          },
+                          {
+                            "value": "notes",
+                            "label": "Notes only"
+                          }
+                        ],
+                        "emptyLabel": "Use a collection",
+                        "clearOnChange": [
+                          [
+                            "collection"
+                          ]
+                        ]
+                      },
+                      {
+                        "type": "field",
+                        "path": [
+                          "collection"
+                        ],
+                        "title": "Collection",
+                        "control": "select",
+                        "optionsFrom": [
+                          "collections"
+                        ],
+                        "emptyLabel": "Use the selection above",
+                        "clearOnChange": [
+                          [
+                            "source"
+                          ]
+                        ]
+                      },
+                      {
+                        "type": "field",
+                        "path": [
+                          "id"
+                        ],
+                        "title": "Section ID",
+                        "description": "Keep this stable to preserve saved section preferences."
+                      }
+                    ],
+                    "collapsed": true
+                  }
+                ],
+                "collapsed": true
+              }
+            ]
+          },
+          {
+            "type": "group",
+            "title": "Advanced",
+            "children": [
+              {
+                "type": "map",
+                "path": [
+                  "collections"
+                ],
+                "title": "Custom collections",
+                "description": "Reusable selections of files and notes. Section references use these names; update references before removing a collection.",
+                "default": {
+                  "favorites": {
+                    "source": "items",
+                    "where": {
+                      "===": [
+                        {
+                          "var": "favorite"
+                        },
+                        true
+                      ]
+                    },
+                    "sort": "favoriteOrder"
+                  }
+                },
+                "mergeDefaults": true,
+                "removable": false,
+                "itemTemplate": {
+                  "source": "notes"
+                },
+                "addLabel": "+ Add collection",
+                "children": [
+                  {
+                    "type": "field",
+                    "path": [
+                      "source"
+                    ],
+                    "title": "Include",
+                    "control": "select",
+                    "options": [
+                      {
+                        "value": "items",
+                        "label": "All files and notes"
+                      },
+                      {
+                        "value": "notes",
+                        "label": "Notes only"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "field",
+                    "path": [
+                      "sort"
+                    ],
+                    "title": "Default sort order",
+                    "control": "select",
+                    "options": [
+                      {
+                        "value": "title",
+                        "label": "Title"
+                      },
+                      {
+                        "value": "name",
+                        "label": "Name"
+                      },
+                      {
+                        "value": "path",
+                        "label": "File path"
+                      },
+                      {
+                        "value": "modifiedAt",
+                        "label": "Last modified"
+                      },
+                      {
+                        "value": "favoriteOrder",
+                        "label": "My favorites order"
+                      }
+                    ],
+                    "optional": true,
+                    "emptyLabel": "Name"
+                  },
+                  {
+                    "type": "group",
+                    "title": "Custom filter",
+                    "children": [
+                      {
+                        "type": "field",
+                        "path": [
+                          "where"
+                        ],
+                        "title": "Filter rule",
+                        "control": "json",
+                        "description": "Advanced JSONLogic rule. Leave blank to include everything from the selected source."
+                      }
+                    ],
+                    "collapsed": true
+                  }
+                ]
+              }
+            ],
+            "collapsed": true
+          }
+        ]
+      }
+    },
+    {
       "id": "git-ignore",
       "title": "Git ignore rules",
       "group": "Sync & Git",
@@ -26,7 +378,11 @@
           "end": "# /NextProb managed skills",
           "label": "NextProb installed skills (automatically updated)"
         }
-      ]
+      ],
+      "ui": {
+        "advanced": true,
+        "order": 100
+      }
     },
     {
       "id": "sync-ignore",
@@ -46,28 +402,11 @@
       "creation": {
         "mode": "explicit",
         "initialText": ""
+      },
+      "ui": {
+        "advanced": true,
+        "order": 101
       }
-    },
-    {
-      "id": "project-display",
-      "title": "Project display",
-      "group": "Display",
-      "description": "Controls NextProb sidebar sections and collections. Omitted values use application defaults; invalid edits retain the last valid runtime configuration.",
-      "match": {
-        "paths": [
-          "nextprob.config.json"
-        ]
-      },
-      "format": "json",
-      "views": [
-        "structured",
-        "source"
-      ],
-      "creation": {
-        "mode": "explicit",
-        "initialText": "{\n  \"version\": 1\n}\n"
-      },
-      "schema": "project-config.schema.json"
     },
     {
       "id": "project-settings-definitions",
@@ -88,7 +427,11 @@
         "mode": "explicit",
         "initialText": "{\n  \"version\": 1,\n  \"definitions\": []\n}\n"
       },
-      "schema": "catalog.schema.json"
+      "schema": "catalog.schema.json",
+      "ui": {
+        "advanced": true,
+        "order": 103
+      }
     },
     {
       "id": "agent-instructions",
@@ -115,7 +458,11 @@
           "end": "<!-- /APP-DEFAULT -->",
           "label": "NextProb default instructions (automatically updated)"
         }
-      ]
+      ],
+      "ui": {
+        "advanced": true,
+        "order": 104
+      }
     },
     {
       "id": "claude-instructions",
@@ -143,7 +490,11 @@
           "end": "<!-- /APP-DEFAULT -->",
           "label": "NextProb default instructions (automatically updated)"
         }
-      ]
+      ],
+      "ui": {
+        "advanced": true,
+        "order": 105
+      }
     },
     {
       "id": "gemini-instructions",
@@ -171,7 +522,11 @@
           "end": "<!-- /APP-DEFAULT -->",
           "label": "NextProb default instructions (automatically updated)"
         }
-      ]
+      ],
+      "ui": {
+        "advanced": true,
+        "order": 106
+      }
     },
     {
       "id": "claude-resources",
@@ -190,6 +545,10 @@
       "creation": {
         "mode": "explicit",
         "initialText": ""
+      },
+      "ui": {
+        "advanced": true,
+        "order": 107
       }
     },
     {
@@ -209,6 +568,10 @@
       "creation": {
         "mode": "explicit",
         "initialText": ""
+      },
+      "ui": {
+        "advanced": true,
+        "order": 108
       }
     },
     {
@@ -228,6 +591,10 @@
       "creation": {
         "mode": "explicit",
         "initialText": ""
+      },
+      "ui": {
+        "advanced": true,
+        "order": 109
       }
     },
     {
@@ -247,6 +614,10 @@
       "creation": {
         "mode": "explicit",
         "initialText": ""
+      },
+      "ui": {
+        "advanced": true,
+        "order": 110
       }
     }
   ]
