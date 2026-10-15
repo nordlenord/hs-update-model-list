@@ -1,6 +1,6 @@
 # Progressive settings forms
 
-Use this design by default for settings presentation requests: put frequent choices first, use user-facing labels and help text, show visibility/order at the section level, and collapse uncommon choices under “More options” or “Advanced”. Internal version fields and raw rule syntax belong in Source or an advanced JSON editor. Do not automatically expose every JSON leaf.
+For declarative forms in the default renderer, put frequent choices first, use user-facing labels and help text, show visibility/order at the section level, and collapse uncommon choices under “More options” or “Advanced”. Internal version fields and raw rule syntax belong in Source or an advanced JSON editor. Do not automatically expose every JSON leaf. For user-owned HTML presentation, read [HTML settings interfaces](settings-html.md).
 
 NextProb 0.3.2+ supports `ui` on any JSON settings definition. The built-in Sidebar page already uses this design, from the maintained catalog. Installing/reading this skill does not create or overwrite project files. To customize a layout, override the definition in the project's `nextprob.settings.json`, preserving unrelated definitions and values. See [file-backed settings](project-settings.md) for path/schema ownership rules.
 

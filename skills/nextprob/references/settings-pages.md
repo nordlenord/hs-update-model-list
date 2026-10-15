@@ -1,6 +1,6 @@
 # Task-based project settings
 
-NextProb 0.3.3+ separates navigation pages from file definitions. Use these defaults for settings UI requests. Present tasks and packages; keep supporting files out of navigation. A setting's source file remains authoritative. Do not create a file or copy the demo just because this skill was read.
+NextProb 0.3.3+ separates navigation pages from file definitions. Use these defaults when extending the catalog-driven interface. Present tasks and packages; keep supporting files out of navigation. A setting's source file remains authoritative. Custom HTML can provide its own navigation; see [HTML settings interfaces](settings-html.md). Do not create a file or copy the demo just because this skill was read.
 
 ## Resource policy
 
@@ -72,3 +72,7 @@ Use `ui.editor: "document"` with Markdown preview for instruction documents, `"r
 [The demo folder](../assets/settings-demo/) includes the full page catalog and definitions, portable schemas, a sidebar configuration, exclusion files, project/tool instructions, editor conventions, a custom skill, and an additional document available through the browser. Its `nextprob.settings.json` is generated from the same maintained catalog as the app defaults; all built-in definitions are covered, including those intentionally excluded from navigation.
 
 For a requested demo in a new/scratch project, copy the folder contents including dotfiles. In an existing project, inspect first and merge only requested changes; never replace the user's configuration or instructions with demo content. Copying this example is unnecessary for normal projects: the built-in catalog already applies this design.
+
+## Replaceable HTML presentation
+
+These task pages describe the maintained default HTML renderer. A project can select a custom HTML note in the application host, retain its own navigation and controls, and use the same versioned settings bridge. Catalog pages and form layouts remain metadata rather than a restriction on custom HTML. Maintainers edit `settings/ui/` in the content repository; the installed skill's UI assets are generated reference copies. See [file-backed settings](project-settings.md#html-settings-interfaces).

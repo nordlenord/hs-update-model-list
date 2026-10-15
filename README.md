@@ -31,3 +31,11 @@ The default Sidebar settings page uses a reusable declarative form (`ui.layout`)
 NextProb 0.3.3 adds task-based pages for exclusions, instructions, skills, tool settings, editor conventions, and settings registration. `skills/nextprob/references/settings-pages.md` defines the complete resource policy, including exclusions. The portable settings demo now covers all pages. Folder contents load on demand; supporting package files stay inside skill details.
 
 Settings catalogs declare a positive `revision` (publication order) separately from their `version` (file format), plus `minAppVersion`. Increment the revision for every published catalog or referenced-schema change. NextProb 0.3.4+ selects the newest compatible bundled/cached catalog, prefers bundled content at equal revisions, and ignores older or incompatible downloads. Catalogs without revision metadata count as revision zero. Project overrides remain independent of publication selection.
+
+## Settings HTML interface
+
+`settings/ui/` is the maintained source of the default settings HTML note, stylesheet, bootstrap, and reusable renderer. `ui/manifest.json` declares the settings bridge API version, minimum compatible application version, and every asset in the publication. The application owns its bridge, authorization, validation, persistence, and conflict handling; this repository owns how the default interface presents those capabilities.
+
+Edit these resources here, increment `settings/catalog.json`'s publication `revision` for a UI change, and run the sibling app's `npm run sync:official-skills -- ../hs-update-model-list/skills`. This generates the app's offline `project-settings/ui/` snapshot and portable skill reference assets. Do not edit those generated copies. Run `npm run check:official-skills` in the app before packaging. A publication includes its catalog, schemas, manifest, and complete UI together; compatible downloaded publications remain cached for offline use.
+
+Projects can choose their own HTML note through Project Settings, create an editable copy, reload their interface, or restore the maintained default. The public `window.settings` API is the compatibility boundary. Custom HTML remains user-owned and is not replaced by content updates. Shared default assets used by an editable copy follow the active compatible publication.

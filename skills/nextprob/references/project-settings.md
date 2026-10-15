@@ -72,3 +72,11 @@ Omit the definition's `schema` field if a source and generic JSON view are suffi
 NextProb validates and hot reloads local definitions. An invalid edit reports diagnostics and retains the last valid local definitions for the current project session. Deleting `nextprob.settings.json` removes local customizations and restores built-ins. Read validation messages before considering a presentation change complete.
 
 Definitions are data, never executable JavaScript or shell commands. Existing editors support newly registered resources without application changes. New parser capabilities or runtime application behavior require engine support; do not invent unsupported options. User customization needs only project files and this skill, with no application checkout or content-repository maintenance commands.
+
+## HTML settings interfaces
+
+The application renders Project Settings in an HTML note using a dedicated `window.settings` bridge (API version 1). The host provides Choose HTML note, Create editable copy, Reload interface, and Use default controls outside the replaceable interface. Ordinary notes do not gain settings access; open a custom note through the Project Settings host.
+
+Users can control all presentation in their own HTML, CSS, and JavaScript while keeping file loading, validation, saving, drafts, and conflicts in the application. `nextprob.settings.json` remains useful for registering resources and describing fields; custom HTML can consume that metadata or provide its own controls. Do not store application setting values in noteDB or an extra configuration mirror. Check `window.settings.apiVersion`, call `list()` to obtain the current workspace ID, then `read(workspaceId, path)` and `save(workspaceId, path, text, revision)`. Handle native errors by `error.code`, including `CONFLICT`, `STALE_WORKSPACE`, and `UNAUTHORIZED`. The draft methods `updateDraft`, `getDraft`, and `discardDraft` retain unsaved edits in the application session; `onChanged` subscribes to external changes.
+
+Maintainers edit default presentation in the content repository's `settings/ui/`, never in app or installed skill snapshots. The asset reference at `../assets/project-settings/ui/` is generated for inspection; user interfaces belong in actual project HTML notes. New bridge capabilities or storage semantics still require application support.
