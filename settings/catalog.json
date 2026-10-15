@@ -70,6 +70,27 @@
       "schema": "project-config.schema.json"
     },
     {
+      "id": "project-settings-definitions",
+      "title": "Project Settings layout",
+      "group": "Display",
+      "description": "User-owned definitions that add settings files to Project Settings or replace built-in definitions by ID. Local schema paths are relative to the project root. Invalid edits retain the last valid definitions; deleting this file restores built-ins.",
+      "match": {
+        "paths": [
+          "nextprob.settings.json"
+        ]
+      },
+      "format": "json",
+      "views": [
+        "structured",
+        "source"
+      ],
+      "creation": {
+        "mode": "explicit",
+        "initialText": "{\n  \"version\": 1,\n  \"definitions\": []\n}\n"
+      },
+      "schema": "catalog.schema.json"
+    },
+    {
       "id": "agent-instructions",
       "title": "Agent instructions",
       "group": "Agent Instructions & Skills",
