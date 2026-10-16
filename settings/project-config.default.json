@@ -31,8 +31,7 @@
           "view": "tree",
           "source": "items"
         }
-      ],
-      "hideOfficialFiles": true
+      ]
     }
   }
 }

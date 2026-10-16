@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "revision": 5,
+  "revision": 6,
   "minAppVersion": "0.3.5",
   "definitions": [
     {
@@ -42,18 +42,6 @@
                 "control": "toggle",
                 "default": true,
                 "description": "Keep hidden project files out of folder views."
-              },
-              {
-                "type": "field",
-                "path": [
-                  "surfaces",
-                  "sidebar",
-                  "hideOfficialFiles"
-                ],
-                "title": "Hide official support files",
-                "control": "toggle",
-                "default": true,
-                "description": "Apply the current official exclusions to every tree section. Project-specific exclusions still apply when this is off."
               }
             ]
           },
