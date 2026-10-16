@@ -169,7 +169,7 @@
         "hiddenFolders": {
           "type": "array",
           "maxItems": 1000,
-          "description": "Exact project-relative directory paths; a directory and its descendants are hidden in this section only. Use / separators.",
+          "description": "Additional project-relative directory paths hidden in this section. Combined with current resource defaults, minus shownFolders. Use / separators.",
           "items": {
             "type": "string",
             "minLength": 1,
@@ -184,7 +184,27 @@
         "hiddenFiles": {
           "type": "array",
           "maxItems": 1000,
-          "description": "Filenames at any depth, or exact project-relative file paths using /. Case-sensitive; no wildcards. Hides files in this tree section only; collections are unaffected.",
+          "description": "Additional filenames at any depth or exact project-relative file paths hidden in this tree section. Combined with current resource defaults, minus shownFiles. Case-sensitive; no wildcards; collections are unaffected.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!.*[*?\\[\\]])(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*\u0000).*[^/]$"
+          }
+        },
+        "shownFolders": {
+          "type": "array",
+          "maxItems": 1000,
+          "description": "Explicitly removed directory exclusions. These paths stay visible when resource defaults change; also allows these directory segments through the dot-folder filter. Use / separators.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*\u0000).*[^/]$"
+          }
+        },
+        "shownFiles": {
+          "type": "array",
+          "maxItems": 1000,
+          "description": "Explicitly removed file exclusions. These filenames or exact project-relative paths stay visible when resource defaults change; also allows matching dot-prefixed filenames through the dot-file filter. Case-sensitive; no wildcards.",
           "items": {
             "type": "string",
             "minLength": 1,
@@ -211,6 +231,34 @@
           "if": {
             "required": [
               "hiddenFiles"
+            ]
+          },
+          "then": {
+            "properties": {
+              "view": {
+                "const": "tree"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "shownFolders"
+            ]
+          },
+          "then": {
+            "properties": {
+              "view": {
+                "const": "tree"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "shownFiles"
             ]
           },
           "then": {

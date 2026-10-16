@@ -72,8 +72,15 @@
     else parent[path.at(-1)] = copy(next);
     return value;
   }
+  // User removals remain remembered when resources add or retire defaults.
+  function resolveSectionExclusions(section, defaults = {}) {
+    return Object.fromEntries(['Files', 'Folders'].map(kind => {
+      const hidden = `hidden${kind}`, shown = new Set(section[`shown${kind}`] || []);
+      return [hidden, [...new Set([...(defaults[hidden] || []), ...(section[hidden] || [])])].filter(value => !shown.has(value))];
+    }));
+  }
   // Defaults affect the view only. A write materializes the smallest missing branch.
-  function formDocument(raw, layout) {
+  function formDocument(raw, layout, officialExclusions) {
     const doc = copy(raw);
     function visit(nodes, base = []) {
       for (const node of nodes) {
@@ -89,6 +96,10 @@
       }
     }
     visit(layout);
+    if (officialExclusions) for (const surface of Object.values(doc.surfaces || {})) {
+      const defaults = surface.hideOfficialFiles === false ? {} : officialExclusions;
+      for (const section of surface.sections || []) if (section.view === 'tree') Object.assign(section, resolveSectionExclusions(section, defaults));
+    }
     return doc;
   }
   function writeValue(text, path, value, effective = JSON.parse(text), atomicPaths = []) {
@@ -113,7 +124,7 @@
     assign(updated, relative, value);
     return replaceField(text, parent, updated);
   }
-  function writeFormValue(text, path, value, layout) {
+  function writeFormValue(text, path, value, layout, officialExclusions, originalAdditions) {
     const effective = formDocument(JSON.parse(text), layout), atoms = [];
     function visit(nodes, base = []) {
       for (const node of nodes) {
@@ -124,6 +135,18 @@
       }
     }
     visit(layout);
+    // Persist only user choices; never freeze resource defaults into a saved section.
+    if (officialExclusions && path.length === 5 && path[0] === 'surfaces' && path[2] === 'sections' && ['hiddenFiles', 'hiddenFolders'].includes(path[4])) {
+      const hidden = path[4], shown = hidden.replace('hidden', 'shown');
+      const section = get(effective, path.slice(0, -1));
+      const defaults = get(effective, ['surfaces', path[1], 'hideOfficialFiles']) === false ? [] : officialExclusions[hidden] || [];
+      const desired = [...new Set((value || []).filter(Boolean))];
+      const removed = [...new Set([...defaults, ...(originalAdditions || section[hidden] || []), ...(section[shown] || [])])].filter(entry => !desired.includes(entry));
+      const additions = desired.filter(entry => !defaults.includes(entry));
+      let next = writeValue(text, path, additions, effective, atoms);
+      next = writeValue(next, [...path.slice(0, -1), shown], removed.length ? removed : undefined);
+      return next;
+    }
     return writeValue(text, path, value, effective, atoms);
   }
   // Keep protected text byte-for-byte while allowing surrounding user content to change.
@@ -217,7 +240,7 @@
     next.definitions = next.definitions.filter(d => !owned.has(d.id) || referenced.has(d.id));
     return next;
   }
-  if (typeof module !== 'undefined') module.exports = { jsonFields, fieldSchema, replaceField, lines, revisionChanged, formDocument, writeValue, writeFormValue, documentParts, iniSections, editIni, agentPaths, registerAgent, removeAgent };
+  if (typeof module !== 'undefined') module.exports = { jsonFields, fieldSchema, replaceField, lines, revisionChanged, formDocument, writeValue, writeFormValue, resolveSectionExclusions, documentParts, iniSections, editIni, agentPaths, registerAgent, removeAgent };
   if (!root || !root.document) return;
   const document = root.document;
   const drafts = new Map(); // View cache; drafts are persisted by the application session.
@@ -659,19 +682,8 @@
     add.append(pattern,button('+ Add file pattern',()=>{const value=pattern.value.trim();if(!value||/[\r\n\[\]]/.test(value)){message('Enter a file pattern without brackets or newlines.',true);return;}const ending=parsed.entries.find(l=>l.ending)?.ending||'\n';d.text+=(d.text&&!/[\r\n]$/.test(d.text)?ending:'')+ending+'['+value+']'+ending;renderEditor();}));panel.append(add);
   }
   function renderForm(d, layout) {
-    const effective = formDocument(JSON.parse(d.text), layout);
-    if (d.snapshot.path === 'nextprob.config.json' && catalog.officialExclusions) {
-      const official = element('details', null, 'project-settings-card project-settings-official-exclusions');
-      official.append(element('summary', 'Official exclusions'));
-      official.append(element('p', 'These rules update with official resources and apply to all tree sections. Your additional exclusions are edited below.', 'project-settings-description'));
-      for (const [key, label] of [['hiddenFiles', 'Files'], ['hiddenFolders', 'Folders']]) {
-        official.append(element('h4', label));
-        const list = element('ul');
-        for (const value of catalog.officialExclusions[key]) { const item = element('li'); item.append(element('code', value)); list.append(item); }
-        official.append(list);
-      }
-      editor.append(official);
-    }
+    const exclusions = d.snapshot.path === 'nextprob.config.json' ? catalog.officialExclusions : undefined;
+    const effective = formDocument(JSON.parse(d.text), layout, exclusions);
     const form = element('div', null, 'project-settings-form');
     editor.append(form);
     const conditions = [];
@@ -683,7 +695,7 @@
     function commit(path, value, rerender = false) {
       try {
         // Read current text, never the closure's older token offsets or defaults.
-        d.text = writeFormValue(d.text, path, value, layout);
+        d.text = writeFormValue(d.text, path, value, layout, exclusions);
         if (rerender) renderEditor(); else updateStatus();
       } catch (error) { message(error.message, true); }
     }
@@ -739,12 +751,15 @@
             if (control === 'json') input.spellcheck = false;
             if (control === 'text') { if (schema.minLength != null) { input.minLength = schema.minLength; input.required = schema.minLength > 0; } if (schema.maxLength != null) input.maxLength = schema.maxLength; if (schema.pattern) input.pattern = `.*(?:${schema.pattern}).*`; }
           }
+          // Input events share the additions present when editing began, so temporary
+          // prefixes typed between events do not become remembered removals.
+          const originalAdditions = exclusions && path.length === 5 && path[0] === 'surfaces' && path[2] === 'sections' && ['hiddenFiles', 'hiddenFolders'].includes(path[4]) ? copy(get(JSON.parse(d.text), path) || []) : undefined;
           const change = event => {
             try {
               input.setCustomValidity('');
               if (!input.checkValidity()) { if (event.type === 'change') input.reportValidity(); return; }
               const next = node.optional && input.value === '' && control !== 'toggle' ? undefined : control === 'toggle' ? input.checked : control === 'select' ? input.value === '' ? undefined : JSON.parse(input.value) : control === 'json' ? input.value.trim() ? JSON.parse(input.value) : undefined : control === 'lines' ? input.value.split(/\r?\n/).filter(Boolean) : control === 'number' ? Number(input.value) : input.value;
-              let text = writeFormValue(d.text, path, next, layout);
+              let text = writeFormValue(d.text, path, next, layout, exclusions, originalAdditions);
               if (next !== undefined) for (const sibling of node.clearOnChange || []) text = writeValue(text, [...base, ...sibling], undefined);
               d.text = text;
               if (control === 'toggle' || control === 'select') renderEditor();
