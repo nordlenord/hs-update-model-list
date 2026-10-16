@@ -660,6 +660,18 @@
   }
   function renderForm(d, layout) {
     const effective = formDocument(JSON.parse(d.text), layout);
+    if (d.snapshot.path === 'nextprob.config.json' && catalog.officialExclusions) {
+      const official = element('details', null, 'project-settings-card project-settings-official-exclusions');
+      official.append(element('summary', 'Official exclusions'));
+      official.append(element('p', 'These rules update with official resources and apply to all tree sections. Your additional exclusions are edited below.', 'project-settings-description'));
+      for (const [key, label] of [['hiddenFiles', 'Files'], ['hiddenFolders', 'Folders']]) {
+        official.append(element('h4', label));
+        const list = element('ul');
+        for (const value of catalog.officialExclusions[key]) { const item = element('li'); item.append(element('code', value)); list.append(item); }
+        official.append(list);
+      }
+      editor.append(official);
+    }
     const form = element('div', null, 'project-settings-form');
     editor.append(form);
     const conditions = [];

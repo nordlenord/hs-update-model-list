@@ -41,6 +41,11 @@
               "items": {
                 "$ref": "#/$defs/section"
               }
+            },
+            "hideOfficialFiles": {
+              "type": "boolean",
+              "default": true,
+              "description": "Apply the current official support-file and folder exclusions to all tree sections. Project-specific exclusions remain active when false."
             }
           }
         }

@@ -10,15 +10,23 @@ NextProb installs the package automatically into a project's `.agents/skills/nex
 
 When changing the skill, increment its manifest version. If instructions require a newer app or config format, update the compatibility fields too. Keep examples within the runtime's supported fields and rule operators.
 
-Display defaults are maintained in `settings/project-config.default.json`, including the Notes tree's `hiddenFolders` and `hiddenFiles` lists. Configuration schemas are generated from NextProb's implementation. From a sibling `html-notes-app` checkout, run:
+Display defaults are maintained in `settings/project-config.default.json`. Shared official file and folder exclusions are maintained separately in `settings/note-exclusions.json`. Configuration schemas are generated from NextProb's implementation. From a sibling `html-notes-app` checkout, run:
 
 ```sh
 npm run sync:official-skills -- ../hs-update-model-list/skills
 npm run check:official-skills
 ```
 
-This imports the resource-owned defaults, mirrors the Sidebar form's default sections, and refreshes the generated assets here and the app's bundled offline snapshot. Built-in defaults use this snapshot; publishing resources alone does not live-update a running app's defaults. Existing projects with explicit section arrays retain their choices. Commit the content changes and the matching app snapshot together in their respective repositories. Publishing the content repository makes compatible remote updates available; the bundled copy lets the app install skills without a network connection.
+This imports the resource-owned defaults, mirrors the Sidebar form's default sections, and refreshes the generated assets here and the app's bundled offline snapshot. Built-in layout defaults use this snapshot. Official exclusions also travel through the existing versioned settings cache: they update the active sidebar when downloaded and persist for offline startup, including projects with saved section arrays. Commit the content changes and the matching app snapshot together in their respective repositories. Publishing the content repository makes compatible remote updates available; the bundled copy lets the app install skills without a network connection.
 
+
+## Official note exclusions
+
+To add an official filename or folder, edit `settings/note-exclusions.json` (`version: 1`, `hiddenFiles`, `hiddenFolders`) and increment `settings/catalog.json`'s publication `revision`. Publish these resources together. The existing content archive download, compatibility selection, immutable cache, and settings-change notifications deliver the rules; there is no separate updater. No app rebuild or project-file rewrite is needed for future list edits after this runtime support is installed. Keep `minAppVersion` compatible with the runtime capabilities used by the publication.
+
+Filenames match files at every depth; file paths and folder paths match exact project-relative locations. Official exclusions are a shared presentation layer across all sidebar trees. Saved per-section lists add to that layer, including when they are empty or copied from older defaults. The Sidebar editor shows active official rules separately from personal additions. Users can turn off the official layer with `surfaces.sidebar.hideOfficialFiles: false`; personal rules still apply. Favorites and other list collections are unaffected. Invalid, incompatible, or stale packages leave the last working package available; older packages without the resource use bundled rules.
+
+The app sync command mirrors this file into the app fallback and portable skills for releases. It does not generate the maintained list from app code, and running it is not required to publish a later exclusion-only update. Bump the skill manifest version if you also change portable skill content.
 
 ## Project settings definitions
 

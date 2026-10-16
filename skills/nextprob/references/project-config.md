@@ -10,13 +10,13 @@ Validate JSON syntax and the structure against `../assets/project-config.schema.
 
 ## Defaults and replacement behavior
 
-With no config, NextProb displays Favorites and a Notes tree. Favorites selects user-favorited items and retains their manually assigned order. The default tree hides `.claude`, `.vscode`, `.context`, `.gemini`, `.codex`, `.opencode`, `.pi`, `.Trash`, and `_templates`. It also hides agent instruction filenames and `.DS_Store`; consult the default configuration asset for the full list. `hideDotFolders` is `true`, which additionally hides dot-prefixed folders and files from tree sections.
+With no config, NextProb displays Favorites and a Notes tree. Favorites selects user-favorited items and retains their manually assigned order. Official exclusions hide these support folders, agent instruction filenames, and `.DS_Store`; the Sidebar settings page lists the current active rules. `hideDotFolders` is `true`, which additionally hides dot-prefixed folders and files from tree sections.
 
 - `version` is required and must be `1`.
 - Omitted sidebar settings retain defaults.
 - `collections` merges by collection ID with the built-in collections. A supplied definition replaces the whole collection definition with that ID. An empty object does not remove built-in Favorites.
 - An explicit `surfaces.sidebar.sections` array replaces the entire default section array; entries are not merged by ID. Preserve the default Favorites and Notes entries when adding a group unless the user wants them removed. `[]` intentionally shows no sections.
-- Section fields have no inheritance from a similarly named default section. An explicit section without `hiddenFolders` hides no ordinary folders through that setting. Keep the existing exclusion list when adding a path.
+- Section fields have no inheritance from a similarly named default section. Their `hiddenFiles` and `hiddenFolders` add personal exclusions to the shared official layer. Official rules still apply to saved custom sections with missing or empty lists. Keep existing personal exclusions when adding a path.
 - Only the `sidebar` surface is supported today. Collections are reusable definitions; other surfaces are not configurable yet.
 
 ## Collections and sections
@@ -41,7 +41,7 @@ A section has required `id`, `title`, `view`, and exactly one of `source` or `co
 | `enabled` | Optional boolean, default `true`. Set `false` to hide a section while keeping its configuration (NextProb 0.3.2+). |
 | `hideWhenEmpty` | Optional boolean; if true, omit the section when it has no displayed entries. |
 | `hiddenFolders` | Optional exact project-relative directory paths, supported only for tree sections. |
-| `hiddenFiles` | Optional case-sensitive filenames at any depth or exact project-relative file paths, supported only for tree sections. No wildcards. |
+| `hiddenFiles` | Optional personal additions: case-sensitive filenames at any depth or exact project-relative file paths, supported only for tree sections. No wildcards. |
 
 Filtering belongs in a collection's `where`, not directly on a section. `hideDotFolders` belongs to `surfaces.sidebar`, not individual sections, and affects tree views only. Sections are displayed in array order. A note may appear in multiple sections.
 
@@ -185,6 +185,9 @@ Favorites membership and manual ordering come from NextProb's existing favorite 
 
 ## Hiding files
 
-Set `hiddenFiles` on the intended tree section, for example `"hiddenFiles": ["GEMINI.md", "work/private.md"]`. A filename matches files at every depth; a path containing `/` matches only that exact project-relative file. Matching is case-sensitive and never hides directories. Hidden files remain available to collections, including Favorites, and Project Settings. An explicit section has no file exclusions unless supplied; `[]` shows all discoverable files subject to other display filters. Preserve existing exclusions when extending a list.
+Set `hiddenFiles` on the intended tree section, for example `"hiddenFiles": ["GEMINI.md", "work/private.md"]`. A filename matches files at every depth; a path containing `/` matches only that exact project-relative file. Matching is case-sensitive and never hides directories. Hidden files remain available to collections, including Favorites, and Project Settings. An explicit section has no personal file exclusions unless supplied; `[]` still retains current official exclusions. Set `surfaces.sidebar.hideOfficialFiles` to `false` to disable the official layer while retaining personal rules. Preserve existing exclusions when extending a list.
 
-Maintainers own display defaults in the resources repository's `settings/project-config.default.json`. The app's sync script copies those defaults into portable skill assets and the bundled offline snapshot. Existing custom section arrays remain authoritative. Updating resources alone does not live-update an already running app's built-in defaults.
+Maintainers own shared official rules in the resources repository's `settings/note-exclusions.json`. To publish new filenames, edit that file and increment `settings/catalog.json`'s publication revision. The existing content updater refreshes the active sidebar and caches the compatible package for offline restarts, without rewriting project settings or rebuilding the app. Other layout defaults remain in `settings/project-config.default.json`. The app sync script refreshes release fallbacks and portable skills; it is not needed for later exclusion-only publications.
+
+
+The Sidebar editor shows **Official exclusions** as the active downloaded rules and **Additional excluded files/folders** as personal additions. **Hide official support files** controls the shared layer (`surfaces.sidebar.hideOfficialFiles`, default `true`). Do not copy official lists into project files just to receive new official entries.

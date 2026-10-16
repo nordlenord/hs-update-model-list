@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "revision": 4,
+  "revision": 5,
   "minAppVersion": "0.3.5",
   "definitions": [
     {
@@ -42,6 +42,18 @@
                 "control": "toggle",
                 "default": true,
                 "description": "Keep hidden project files out of folder views."
+              },
+              {
+                "type": "field",
+                "path": [
+                  "surfaces",
+                  "sidebar",
+                  "hideOfficialFiles"
+                ],
+                "title": "Hide official support files",
+                "control": "toggle",
+                "default": true,
+                "description": "Apply the current official exclusions to every tree section. Project-specific exclusions still apply when this is off."
               }
             ]
           },
@@ -66,29 +78,7 @@
                 "id": "files",
                 "title": "Notes",
                 "view": "tree",
-                "source": "items",
-                "hiddenFolders": [
-                  ".claude",
-                  ".vscode",
-                  ".context",
-                  "_templates",
-                  ".gemini",
-                  ".codex",
-                  ".opencode",
-                  ".pi",
-                  ".Trash"
-                ],
-                "hiddenFiles": [
-                  "AGENTS.md",
-                  "AGENTS.override.md",
-                  "AGENTS.MD",
-                  "CLAUDE.md",
-                  "CLAUDE.local.md",
-                  "CLAUDE.MD",
-                  "GEMINI.md",
-                  "GEMINI.MD",
-                  ".DS_Store"
-                ]
+                "source": "items"
               }
             ],
             "itemTitle": [
@@ -198,7 +188,7 @@
                     "path": [
                       "hiddenFolders"
                     ],
-                    "title": "Excluded folders",
+                    "title": "Additional excluded folders",
                     "control": "lines",
                     "visibleWhen": {
                       "path": [
@@ -206,14 +196,14 @@
                       ],
                       "equals": "tree"
                     },
-                    "description": "One project-relative folder per line. Its contents are hidden in this section."
+                    "description": "Your additions to the official exclusions. One project-relative folder per line."
                   },
                   {
                     "type": "field",
                     "path": [
                       "hiddenFiles"
                     ],
-                    "title": "Excluded files",
+                    "title": "Additional excluded files",
                     "control": "lines",
                     "visibleWhen": {
                       "path": [
@@ -221,7 +211,7 @@
                       ],
                       "equals": "tree"
                     },
-                    "description": "One filename (any depth) or project-relative file path per line. Case-sensitive; no wildcards."
+                    "description": "Your additions to the official exclusions. One filename (any depth) or project-relative file path per line. Case-sensitive; no wildcards."
                   },
                   {
                     "type": "group",
