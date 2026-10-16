@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "revision": 3,
+  "revision": 4,
   "minAppVersion": "0.3.5",
   "definitions": [
     {
@@ -71,7 +71,23 @@
                   ".claude",
                   ".vscode",
                   ".context",
-                  "_templates"
+                  "_templates",
+                  ".gemini",
+                  ".codex",
+                  ".opencode",
+                  ".pi",
+                  ".Trash"
+                ],
+                "hiddenFiles": [
+                  "AGENTS.md",
+                  "AGENTS.override.md",
+                  "AGENTS.MD",
+                  "CLAUDE.md",
+                  "CLAUDE.local.md",
+                  "CLAUDE.MD",
+                  "GEMINI.md",
+                  "GEMINI.MD",
+                  ".DS_Store"
                 ]
               }
             ],
@@ -126,6 +142,9 @@
                 "clearOnChange": [
                   [
                     "hiddenFolders"
+                  ],
+                  [
+                    "hiddenFiles"
                   ]
                 ]
               },
@@ -188,6 +207,21 @@
                       "equals": "tree"
                     },
                     "description": "One project-relative folder per line. Its contents are hidden in this section."
+                  },
+                  {
+                    "type": "field",
+                    "path": [
+                      "hiddenFiles"
+                    ],
+                    "title": "Excluded files",
+                    "control": "lines",
+                    "visibleWhen": {
+                      "path": [
+                        "view"
+                      ],
+                      "equals": "tree"
+                    },
+                    "description": "One filename (any depth) or project-relative file path per line. Case-sensitive; no wildcards."
                   },
                   {
                     "type": "group",

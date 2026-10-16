@@ -10,7 +10,7 @@ Validate JSON syntax and the structure against `../assets/project-config.schema.
 
 ## Defaults and replacement behavior
 
-With no config, NextProb displays Favorites and a Notes tree. Favorites selects user-favorited items and retains their manually assigned order. The default tree hides `.claude`, `.vscode`, `.context`, and `_templates`. `hideDotFolders` is `true`, which additionally hides dot-prefixed folders and files from tree sections.
+With no config, NextProb displays Favorites and a Notes tree. Favorites selects user-favorited items and retains their manually assigned order. The default tree hides `.claude`, `.vscode`, `.context`, `.gemini`, `.codex`, `.opencode`, `.pi`, `.Trash`, and `_templates`. It also hides agent instruction filenames and `.DS_Store`; consult the default configuration asset for the full list. `hideDotFolders` is `true`, which additionally hides dot-prefixed folders and files from tree sections.
 
 - `version` is required and must be `1`.
 - Omitted sidebar settings retain defaults.
@@ -41,6 +41,7 @@ A section has required `id`, `title`, `view`, and exactly one of `source` or `co
 | `enabled` | Optional boolean, default `true`. Set `false` to hide a section while keeping its configuration (NextProb 0.3.2+). |
 | `hideWhenEmpty` | Optional boolean; if true, omit the section when it has no displayed entries. |
 | `hiddenFolders` | Optional exact project-relative directory paths, supported only for tree sections. |
+| `hiddenFiles` | Optional case-sensitive filenames at any depth or exact project-relative file paths, supported only for tree sections. No wildcards. |
 
 Filtering belongs in a collection's `where`, not directly on a section. `hideDotFolders` belongs to `surfaces.sidebar`, not individual sections, and affects tree views only. Sections are displayed in array order. A note may appear in multiple sections.
 
@@ -180,3 +181,10 @@ Adapt an existing config instead of replacing it wholesale with this example. Gr
 ## User interaction state
 
 Favorites membership and manual ordering come from NextProb's existing favorite storage. A filter reads that state; editing the config does not favorite or unfavorite a note. Collapse state, selection, and personal sorting preferences are separate from project declarations. Do not rewrite that storage to accomplish a display-configuration request.
+
+
+## Hiding files
+
+Set `hiddenFiles` on the intended tree section, for example `"hiddenFiles": ["GEMINI.md", "work/private.md"]`. A filename matches files at every depth; a path containing `/` matches only that exact project-relative file. Matching is case-sensitive and never hides directories. Hidden files remain available to collections, including Favorites, and Project Settings. An explicit section has no file exclusions unless supplied; `[]` shows all discoverable files subject to other display filters. Preserve existing exclusions when extending a list.
+
+Maintainers own display defaults in the resources repository's `settings/project-config.default.json`. The app's sync script copies those defaults into portable skill assets and the bundled offline snapshot. Existing custom section arrays remain authoritative. Updating resources alone does not live-update an already running app's built-in defaults.

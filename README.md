@@ -10,14 +10,14 @@ NextProb installs the package automatically into a project's `.agents/skills/nex
 
 When changing the skill, increment its manifest version. If instructions require a newer app or config format, update the compatibility fields too. Keep examples within the runtime's supported fields and rule operators.
 
-The config assets are generated from NextProb's implementation. From a sibling `html-notes-app` checkout, run:
+Display defaults are maintained in `settings/project-config.default.json`, including the Notes tree's `hiddenFolders` and `hiddenFiles` lists. Configuration schemas are generated from NextProb's implementation. From a sibling `html-notes-app` checkout, run:
 
 ```sh
 npm run sync:official-skills -- ../hs-update-model-list/skills
 npm run check:official-skills
 ```
 
-This refreshes the generated assets here and the app's bundled offline snapshot. Commit the content changes and the matching app snapshot together in their respective repositories. Publishing the content repository makes compatible remote updates available; the bundled copy lets the app install skills without a network connection.
+This imports the resource-owned defaults, mirrors the Sidebar form's default sections, and refreshes the generated assets here and the app's bundled offline snapshot. Built-in defaults use this snapshot; publishing resources alone does not live-update a running app's defaults. Existing projects with explicit section arrays retain their choices. Commit the content changes and the matching app snapshot together in their respective repositories. Publishing the content repository makes compatible remote updates available; the bundled copy lets the app install skills without a network connection.
 
 
 ## Project settings definitions

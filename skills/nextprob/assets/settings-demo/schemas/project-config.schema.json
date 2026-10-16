@@ -175,6 +175,16 @@
           "type": "boolean",
           "default": true,
           "description": "Show this section in the sidebar. Disabled sections keep their configuration."
+        },
+        "hiddenFiles": {
+          "type": "array",
+          "maxItems": 1000,
+          "description": "Filenames at any depth, or exact project-relative file paths using /. Case-sensitive; no wildcards. Hides files in this tree section only; collections are unaffected.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!.*[*?\\[\\]])(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*\u0000).*[^/]$"
+          }
         }
       },
       "allOf": [
@@ -182,6 +192,20 @@
           "if": {
             "required": [
               "hiddenFolders"
+            ]
+          },
+          "then": {
+            "properties": {
+              "view": {
+                "const": "tree"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "hiddenFiles"
             ]
           },
           "then": {
