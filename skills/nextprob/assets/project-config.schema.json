@@ -50,6 +50,17 @@
           }
         }
       }
+    },
+    "metadataFields": {
+      "type": "object",
+      "maxProperties": 100,
+      "propertyNames": {
+        "$ref": "#/$defs/id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/metadataField"
+      },
+      "description": "Named read-only projections from each folder note’s KV store. Collection rules may reference metadata.<id> for declared fields."
     }
   },
   "$defs": {
@@ -80,7 +91,7 @@
       ]
     },
     "rule": {
-      "description": "JSONLogic subset: ===, !==, ==, !=, >, >=, <, <=, and, or, !, !!, in, var. Variables: relativePath, kind, title, name, extension, ancestorPaths, modifiedAt, favorite, favoriteOrder, capabilities, capabilities.open, capabilities.createFromTemplate. No executable JavaScript. Maximum depth 20, 256 nodes, 50 entries per array.",
+      "description": "JSONLogic subset: ===, !==, ==, !=, >, >=, <, <=, and, or, !, !!, in, var. Variables: relativePath, kind, title, name, extension, ancestorPaths, modifiedAt, favorite, favoriteOrder, capabilities, capabilities.open, capabilities.createFromTemplate. Declared metadata.<id> variables are also supported. No executable JavaScript. Maximum depth 20, 256 nodes, 50 entries per array.",
       "type": [
         "object",
         "array",
@@ -270,6 +281,68 @@
           }
         }
       ]
+    },
+    "metadataField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "key",
+        "read"
+      ],
+      "properties": {
+        "source": {
+          "const": "noteKv"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[^\u0000]+$",
+          "not": {
+            "enum": [
+              "constructor",
+              "prototype",
+              "__proto__"
+            ]
+          },
+          "description": "Literal top-level KV key; dots do not traverse objects."
+        },
+        "read": {
+          "enum": [
+            "value",
+            "exists",
+            "truthy"
+          ]
+        },
+        "type": {
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "array"
+          ]
+        }
+      },
+      "if": {
+        "properties": {
+          "read": {
+            "const": "value"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "type"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "type"
+          ]
+        }
+      }
     }
   }
 }

@@ -75,7 +75,7 @@ Rules use a restricted JSONLogic expression language. Each expression object has
 
 Supported operators: `===`, `!==`, `==`, `!=`, `>`, `>=`, `<`, `<=`, `and`, `or`, `!`, `!!`, `in`, and `var`. Prefer strict comparisons (`===`, `!==`). `in` tests membership in an array or a substring in a string. Rules select an item when their result is truthy using JSONLogic semantics.
 
-`var` may reference only these metadata fields:
+`var` may reference the built-in metadata fields below and explicitly declared `metadata.<id>` fields (see **Note KV metadata**):
 
 | Field | Meaning |
 | --- | --- |
@@ -126,7 +126,59 @@ For notes under either `_templates` or `examples/templates`:
 }
 ```
 
-Rules are bounded to 20 levels of depth, 256 nodes, and 50 entries per array. Comparisons and `in` take two arguments; `<` and `<=` can also take three for a chained comparison. `and` and `or` take 1–50 arguments; `!` and `!!` take one; `var` takes a field name and an optional default. No tags, body text, full-text search, computed current time, or additional variables are supported.
+Rules are bounded to 20 levels of depth, 256 nodes, and 50 entries per array. Comparisons and `in` take two arguments; `<` and `<=` can also take three for a chained comparison. `and` and `or` take 1–50 arguments; `!` and `!!` take one; `var` takes a field name and an optional default. No implicit tags, body text, full-text search, computed current time, or undeclared variables are supported. Tags explicitly projected from note KV storage can be filtered as metadata arrays.
+
+## Note KV metadata
+
+Declare `metadataFields` at the config root to expose selected values from each folder note's existing `storage/kv.json`. These declarations are read-only: they do not create or modify note data, publish notes, or move files. Standalone files and ordinary directories have missing KV values; they never inherit a sibling or parent note's store.
+
+```json
+{
+  "metadataFields": {
+    "published": { "source": "noteKv", "key": "__shareId", "read": "truthy" },
+    "status": { "source": "noteKv", "key": "status", "read": "value", "type": "string" },
+    "tags": { "source": "noteKv", "key": "tags", "read": "value", "type": "array" },
+    "priority": { "source": "noteKv", "key": "priority", "read": "value", "type": "number" }
+  },
+  "collections": {
+    "published": {
+      "source": "notes",
+      "where": { "===": [{ "var": "metadata.published" }, true] },
+      "sort": "title"
+    },
+    "needsReview": {
+      "source": "notes",
+      "where": { "===": [{ "var": "metadata.status" }, "review"] }
+    },
+    "research": {
+      "source": "notes",
+      "where": { "in": ["research", { "var": ["metadata.tags", []] }] }
+    }
+  }
+}
+```
+
+This is a fragment to merge into an existing config, retaining its `version`, unrelated collections, and sidebar settings. Append the following section to the existing `surfaces.sidebar.sections` array to show Published alongside the current sections:
+
+```json
+{ "id": "published", "title": "Published", "view": "list", "collection": "published", "hideWhenEmpty": true }
+```
+
+A note can appear in Published and its original folder at the same time. Collection membership and publish indicators share the same catalog and local publication state, including notes in ordinary dot directories; tree exclusions only control presentation. Publication means a truthy local `__shareId`, without a network check.
+
+Each declaration requires `source`, `key`, and `read`:
+
+| Field | Meaning |
+| --- | --- |
+| `source` | Currently only `"noteKv"`. Reads the note's own existing KV store. |
+| `key` | Literal top-level key, 1–200 characters, without NUL. Dots are part of the key, not object traversal. `constructor`, `prototype`, and `__proto__` are forbidden. |
+| `read: "value"` | Returns a value matching the required `type`: `"string"`, `"number"`, `"boolean"`, or `"array"`. Missing, null, mismatched, and oversized values become `null`; no type coercion occurs. False, zero, and empty strings are preserved. |
+| `read: "exists"` | Boolean indicating that the key is an own property, including keys containing null, false, zero, or an empty string. Omit `type`. |
+| `read: "truthy"` | Boolean using JavaScript truthiness, matching the publish indicator. Missing, null, false, zero, and empty strings are false. Arrays and objects, including empty ones, are true. Omit `type`. |
+
+At most 100 declarations are allowed. Names follow the collection ID rules. Only the exact declared `metadata.<id>` variables may be referenced; the whole `metadata` object and nested paths are unavailable. Strings are limited to 10,000 characters. Arrays have at most 50 scalar entries (strings, finite numbers, booleans, or null); nested arrays and objects are unavailable. KV inputs must be JSON objects no larger than 1 MiB. Missing storage is normal; unreadable, symlinked, malformed, or oversized storage produces a sidebar diagnostic and missing values.
+
+Only metadata referenced by enabled sections is projected. Publication metadata is also read for the app's indicators. Reads are cached and shared, with a bounded cache; app writes, sync, and external KV edits refresh relevant state automatically. Other files inside `storage` remain excluded. Metadata fields are available for filtering; existing sort options are unchanged.
 
 ## Adding a Templates group
 
