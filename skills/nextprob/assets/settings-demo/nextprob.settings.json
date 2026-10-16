@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "revision": 7,
+  "revision": 8,
   "minAppVersion": "0.3.5",
   "definitions": [
     {
@@ -64,7 +64,7 @@
               },
               {
                 "id": "files",
-                "title": "Notes",
+                "title": "Probs",
                 "view": "tree",
                 "source": "items"
               }

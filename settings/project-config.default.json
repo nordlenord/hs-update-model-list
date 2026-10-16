@@ -27,7 +27,7 @@
         },
         {
           "id": "files",
-          "title": "Notes",
+          "title": "Probs",
           "view": "tree",
           "source": "items"
         }

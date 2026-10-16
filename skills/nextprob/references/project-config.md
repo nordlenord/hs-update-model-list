@@ -10,12 +10,12 @@ Validate JSON syntax and the structure against `../assets/project-config.schema.
 
 ## Defaults and replacement behavior
 
-With no config, NextProb displays Favorites and a Notes tree. Favorites selects user-favorited items and retains their manually assigned order. Official exclusions hide these support folders, agent instruction filenames, and `.DS_Store`; the Sidebar settings page shows the complete effective lists, including user edits. `hideDotFolders` is `true`, which additionally hides dot-prefixed folders and files from tree sections.
+With no config, NextProb displays Favorites and a Probs tree. Favorites selects user-favorited items and retains their manually assigned order. Official exclusions hide these support folders, agent instruction filenames, and `.DS_Store`; the Sidebar settings page shows the complete effective lists, including user edits. `hideDotFolders` is `true`, which additionally hides dot-prefixed folders and files from tree sections.
 
 - `version` is required and must be `1`.
 - Omitted sidebar settings retain defaults.
 - `collections` merges by collection ID with the built-in collections. A supplied definition replaces the whole collection definition with that ID. An empty object does not remove built-in Favorites.
-- An explicit `surfaces.sidebar.sections` array replaces the entire default section array; entries are not merged by ID. Preserve the default Favorites and Notes entries when adding a group unless the user wants them removed. `[]` intentionally shows no sections.
+- An explicit `surfaces.sidebar.sections` array replaces the entire default section array; entries are not merged by ID. Preserve the default Favorites and Probs entries when adding a group unless the user wants them removed. `[]` intentionally shows no sections.
 - Section fields have no inheritance from a similarly named default section. Resource exclusions supply defaults; `hiddenFiles` and `hiddenFolders` store additions, while `shownFiles` and `shownFolders` remember removed entries. Settings combines these into complete editable lists. New resource defaults arrive automatically without restoring explicit removals. Preserve unrelated additions and removals.
 - Only the `sidebar` surface is supported today. Collections are reusable definitions; other surfaces are not configurable yet.
 
@@ -56,7 +56,7 @@ For “hide tmp,” add `"tmp"` to the intended tree section's `hiddenFolders`. 
 ```json
 {
   "id": "files",
-  "title": "Notes",
+  "title": "Probs",
   "view": "tree",
   "source": "items",
   "hiddenFolders": [".claude", ".vscode", ".context", "_templates", "tmp"]
@@ -219,7 +219,7 @@ This complete example preserves the default groups and exclusions while adding T
         },
         {
           "id": "files",
-          "title": "Notes",
+          "title": "Probs",
           "view": "tree",
           "source": "items",
           "hiddenFolders": [".claude", ".vscode", ".context", "_templates"]
