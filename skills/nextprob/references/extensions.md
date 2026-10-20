@@ -14,6 +14,7 @@ the runtime to an older app. Its other settings guidance remains applicable.
 | Command | The user should invoke an action | Publish a note on demand |
 | Background service | Ongoing work or work longer than ten seconds is needed | Watch a server or run an existing sync tool periodically |
 | Plugin | Behavior should be packaged and reused | A folder containing hooks, commands, a service, and settings |
+| UI contribution | Show controls, contextual commands, or an interactive view | A publish action in a note’s right-click menu |
 
 These mechanisms share the same process protocol. Scripts can use Python, Node,
 an explicit shell interpreter, or another executable. They do not depend on the
@@ -53,7 +54,7 @@ the workspace, including through symlinks. IDs must be unique. An extension ID o
 command ID uses 1–80 letters, digits, `.`, `_`, or `-`, starting with a letter or
 digit. Each definition has `id` and `name`, with optional `description`,
 `hooks: [{event, command, args?}]`, `commands: [{id, title, command, args?}]`,
-`service: {command, args?}`, and `settings: {}` defaults.
+`service: {command, args?}`, `settings: {}` defaults, and `contributes: []` UI declarations.
 
 Use executable names/paths and separate string arguments. The host does not run
 a shell or expand `$VARIABLE`, `~`, redirections, or pipelines. Use an explicit
@@ -134,7 +135,7 @@ Input is UTF-8 JSON Lines on stdin. Every message includes:
 
 Hooks receive one `type: "event"` message followed by stdin EOF. Commands receive
 one `type: "command"` message with `command: {id, args}` instead of `event`.
-The current UI supplies no custom command arguments. A service first receives
+UI contribution commands receive context in `command.args`, including a workspace-relative `path` when a note is available. Settings command buttons supply no custom arguments. A service first receives
 `type: "initialize"` with the common context and then receives event messages
 on the same stream. Parse lines across arbitrary chunks; keep reading for the
 lifetime of a service. An ordinary CLI that ignores stdin can still be used as
@@ -206,3 +207,110 @@ are invalid JSON, duplicate IDs, package path escapes, missing executables or
 interpreters, wrong cwd, plain stdout, a ten-second hook timeout, or an exited
 service. Fix the cause and reload; do not repeatedly retry external operations
 or change the workflow's sync direction to make a failure disappear.
+
+## Contribute interface elements
+
+UI contributions use extension API v1 in NextProb versions shipping the UI-zone
+runtime. Older apps with only Settings command buttons do not render these zones.
+Each extension may declare up to 100 contributions in `contributes`:
+
+```json
+{
+  "id": "publish",
+  "zone": "noteMenu",
+  "title": "Publish this note",
+  "icon": "↗",
+  "command": "publish-note",
+  "when": "note",
+  "order": 20
+}
+```
+
+The contribution `id` follows command ID rules and is unique within the extension.
+The extension ID `builtin` is reserved when declaring UI contributions, because
+`builtin:*` configuration keys identify NextProb's own controls. Existing automation
+extensions named `builtin` remain valid without UI contributions.
+`title` is required (1–200 characters). `icon` is optional text, up to 100 characters;
+use a short symbol rather than SVG or HTML. `order` is an optional finite number
+between -100000 and 100000. `when` is optional: `workspace` is always eligible in
+an open workspace; `note` requires a note context. A contribution needs an existing
+`command` ID, a `view`, or both.
+
+| `zone` | Content |
+| --- | --- |
+| `rightPanel` | An icon opening an interactive view, or a command |
+| `sidebarFooter` | Compact workspace status or a command |
+| `bottomBar` | Compact status or a quick command |
+| `sidebar` | An interactive sidebar section, or a command |
+| `noteMenu` | A command acting on the right-clicked note |
+| `mainTab` | A full-size interactive view, or a command |
+
+`view` is an HTML file path relative to the extension package (or workspace for an
+inline extension), supported in `rightPanel`, `sidebar`, and `mainTab`. Absolute
+paths, `..`, symlink escapes, and non-HTML files are rejected. Views are bounded
+to 512 KiB. Package self-contained HTML with inline styles/scripts; loading
+relative package assets is not supported by the current view bridge. Views run
+in sandboxed iframes without Node or NextProb's preload API. Processes still use
+the existing local extension approval mechanism. Disabled extensions contribute
+no active controls.
+
+NextProb supplies the current note context for normal controls and the actual
+clicked note for note-menu commands, even if another note is open. A command
+receives `command.args.path` relative to `workspace.path`. Omit assumptions about
+an absolute path or the currently active tab. Menu contributions operate on one
+clicked note; multi-selection is not a separate API yet.
+
+Processes can update contribution presentation through stdout:
+
+```json
+{"apiVersion":1,"type":"ui","id":"status","patch":{"text":"Ready","badge":"2","disabled":false,"hidden":false}}
+```
+
+`id` is local to that extension. Patches merge with existing presentation state;
+`text` changes the displayed label, `badge` supplies a small label, and the two
+booleans control availability and visibility. The declaration's command/view
+cannot be replaced by a runtime patch. State resets when the extension stops.
+Project layout in `nextprob.config.json` uses qualified IDs such as
+`ui-demo:inspector`; see [UI zone layout](project-config.md#ui-zone-layout).
+
+A view can request its declaration's command without selecting arbitrary app
+commands:
+
+```js
+parent.postMessage({ type: 'nextprob.command' }, '*');
+```
+
+A view can also send JSON data to its extension's running service:
+
+```js
+parent.postMessage({ type: 'nextprob.message', data: { action: 'refresh' } }, '*');
+```
+
+The service receives a JSONL message with `type: "ui.message"`, `contributionId`,
+`data`, and `context` (including `path` when available), along with the common
+workspace/extension fields. Messages require a running service and are limited
+to 32 KiB. App command execution and message routing remain scoped to the
+originating contribution; arbitrary commands and workspace identity supplied by
+iframe content are not accepted.
+
+For a runnable six-zone example, copy `examples/extensions/ui-demo` from the app
+source into `.extensions/ui-demo` and reference that package in
+`nextprob.extensions.json`. Reload extensions and enable **UI contribution demo**
+in Settings → Extensions. The example only logs actions and updates demo status;
+its publish action demonstrates context without publishing anything externally.
+
+The iframe should send `{type: 'nextprob.ready'}` after installing its message
+listener. NextProb sends `{type: 'nextprob.context', context, state}` on readiness,
+load, and context/state changes. `context` includes `workspacePath` and the current
+workspace-relative `path` when available. Sidebar and right-panel views follow the
+active note; a main-tab view retains the note context from when it was opened.
+`state` contains the contribution's
+presentation patch. Always render values as text rather than HTML.
+
+Include an optional `requestId` on `nextprob.command` or `nextprob.message` calls
+to correlate `{type: 'nextprob.result', requestId, result}` or
+`{type: 'nextprob.result', requestId, error}` replies. A service can send data back
+with stdout `{"apiVersion":1,"type":"ui.message","id":"inspector","data":{"ready":true}}`;
+the view receives `{type: 'nextprob.message', data}`. This channel carries JSON
+messages, not DOM access. Views should verify `event.source === parent` before
+handling messages.
