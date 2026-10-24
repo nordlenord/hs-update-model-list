@@ -10,12 +10,13 @@ Validate JSON syntax and the structure against `../assets/project-config.schema.
 
 ## Defaults and replacement behavior
 
-With no config, NextProb displays Favorites and a Probs tree. Favorites selects user-favorited items and retains their manually assigned order. Official exclusions hide these support folders, agent instruction filenames, and `.DS_Store`; the Sidebar settings page shows the complete effective lists, including user edits. `hideDotFolders` is `true`, which additionally hides dot-prefixed folders and files from tree sections.
+With no config, NextProb displays Favorites, Templates, Published, and a Probs tree, in that order. The three list sections are hidden when empty. Favorites selects user-favorited items and retains their manually assigned order. Templates selects notes under `_templates`; Published selects notes with a truthy `__shareId` in note storage. Both sort by title. The Probs tree hides `_templates`, while `hooks` and `tmp` remain visible by default. Official exclusions hide these support folders, agent instruction filenames, and `.DS_Store`; the Sidebar settings page shows the complete effective lists, including user edits. `hideDotFolders` is `true`, which additionally hides dot-prefixed folders and files from tree sections.
 
 - `version` is required and must be `1`.
 - Omitted sidebar settings retain defaults.
+- `metadataFields` merges by field ID with the built-in `published` field (`noteKv`, `__shareId`, `truthy`). A supplied definition replaces the definition with that ID.
 - `collections` merges by collection ID with the built-in collections. A supplied definition replaces the whole collection definition with that ID. An empty object does not remove built-in Favorites.
-- An explicit `surfaces.sidebar.sections` array replaces the entire default section array; entries are not merged by ID. Preserve the default Favorites and Probs entries when adding a group unless the user wants them removed. `[]` intentionally shows no sections.
+- An explicit `surfaces.sidebar.sections` array replaces the entire default section array; entries are not merged by ID. Preserve the default Favorites, Templates, Published, and Probs entries when adding a group unless the user wants them removed. `[]` intentionally shows no sections.
 - Section fields have no inheritance from a similarly named default section. Resource exclusions supply defaults; `hiddenFiles` and `hiddenFolders` store additions, while `shownFiles` and `shownFolders` remember removed entries. Settings combines these into complete editable lists. New resource defaults arrive automatically without restoring explicit removals. Preserve unrelated additions and removals.
 - `surfaces.sidebar` configures note collections. `surfaces.zones` separately orders and hides built-in and extension UI contributions across six zones; see below.
 
